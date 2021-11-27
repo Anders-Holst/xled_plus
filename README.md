@@ -27,7 +27,7 @@ with these steps:
 2. Either you know the ip-address of your lights already, or the `discover` functionality provided in `xled` is used to find it.
 ```
 from xled.discover import discover
-host = discover()['host']
+host = discover().ip_address
 ```
 
 3. Create a HighControlInterface object, connected to that ip-address.
@@ -47,8 +47,8 @@ eff = Fire(ctr)
 eff.launch_movie()
 ```
 
-To install it, either download it from github, or do `pip install
-xled_plus`.
+To install this package, either download it from github, or do `pip install
+xled_plus` (soon... not there yet).
 
 Contributions, suggestions, and feedback are welcome. There is a
 discussion forum connected to these github pages.
