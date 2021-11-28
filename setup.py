@@ -18,8 +18,8 @@ _classifiers = [
 def _run_setup():
     from setuptools import setup
 
-    with open('requirements.txt') as f:
-        REQUIRED = f.read().splitlines()
+    #with open('requirements.txt') as f:
+    #    REQUIRED = f.read().splitlines()
 
     setup(
         name='xled_plus',
@@ -33,7 +33,7 @@ def _run_setup():
         license='MIT',
         classifiers=_classifiers,
         keywords=['xled','twinkly','light-effects'],
-        install_requires=REQUIRED,
+        install_requires=['xled'],
     )
 
 
