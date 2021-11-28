@@ -1,10 +1,22 @@
+"""
+xled_plus.shapes
+~~~~~~~~~~~~~~~~
+
+Author: Anders Holst (anders.holst@ri.se), 2021
+
+This module contains classes for creating scenes of moving (or still) objects.
+Objects implemented are various geometrical shapes, such as polygons, stars,
+and circles, but also simple letters and numbers. 
+"""
+
+
 import math as m
 from random import random, gauss
 
-from xled.ledcolor import hsl_color
-from xled.effect_base import Effect
-from xled.colormeander import ColorMeander
-from xled.pattern import random_hsl_color_func
+from xled_plus.ledcolor import hsl_color
+from xled_plus.effect_base import Effect
+from xled_plus.colormeander import ColorMeander
+from xled_plus.pattern import random_hsl_color_func
 
 
 class Scene(object):

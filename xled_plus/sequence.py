@@ -1,10 +1,27 @@
-from xled.effect_base import Effect
-from xled.colormeander import ColorMeander
-from xled.pattern import blendcolors
-from xled.ledcolor import hsl_color
-import math as m
+"""
+xled_plus.sequence
+~~~~~~~~~~~~~~~~~~
 
-# Spatio-temporal cyclic color sequences
+Author: Anders Holst (anders.holst@ri.se), 2021
+
+This module contains some classes for creating spatio-temporal cyclic color
+sequences. That is, bands or gradients of colors moving across the leds in
+some direction at some speed.
+
+It assumes that a 2D or 3D layout is set on the leds, and that any adjustment
+to the aspect ratio has been made with HighControlInterface.adjust_layout_aspect
+to make the angles come out right. In the 2D case the 'angle' parameter below
+is just a single angle, in degreed counted clockwise from the top. In the 3D
+case, 'angle' is a tuple (theta, phi), where theta is the polar angle, and phi
+the azimuthal angle.
+"""
+
+
+from xled_plus.effect_base import Effect
+from xled_plus.colormeander import ColorMeander
+from xled_plus.pattern import blendcolors
+from xled_plus.ledcolor import hsl_color
+import math as m
 
 
 class Sequence(Effect):
