@@ -1,6 +1,6 @@
 # XLED Plus - Addons to the XLED package, to create nice effects for Twinkly LED lights
 
-This package relies on the XLED package managed by @scrool, which
+This package relies on the [XLED](https://github.com/scrool/xled) package, which
 provides a python interface to Twinkly lights.
 
 This XLED Plus packade provides addons to XLED, for making it easier
