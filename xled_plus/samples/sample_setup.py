@@ -3,6 +3,8 @@ from xled_plus.highcontrol import HighControlInterface
 from xled_plus.ledcolor import *
 from xled_plus.pattern import *
 from xled_plus.effects import *
+from xled_plus.sequence import *
+from xled_plus.shapes import *
 from sys import argv
 
 def setup_control():
