@@ -1,4 +1,4 @@
-__version__ = '0.1.0.1'
+__version__ = '0.1.0.2'
 
 _classifiers = [
     'Development Status :: 4 - Beta',
@@ -14,13 +14,6 @@ _classifiers = [
     'Topic :: Utilities',
 ]
 
-
-with open('requirements.txt') as f:
-    REQUIRED = f.read().splitlines()
-
-with open('README.md') as f:
-    README = f.read()
-
 def _run_setup():
     from setuptools import setup
 
@@ -32,11 +25,11 @@ def _run_setup():
         url='https://github.com/Anders-Holst/xled_plus',
         py_modules=['xled_plus'],
         description='Addons to the XLED package for controling Twinkly LED lights',
-        long_description=README,
+        long_description='Addons to the XLED package for controling Twinkly LED lights',
         license='MIT',
         classifiers=_classifiers,
         keywords=['xled','twinkly','light-effects'],
-        install_requires=REQUIRED,
+        install_requires=['xled'],
     )
 
 
