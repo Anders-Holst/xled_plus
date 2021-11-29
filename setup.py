@@ -32,7 +32,7 @@ def _run_setup():
         url='https://github.com/Anders-Holst/xled_plus',
         py_modules=['xled_plus'],
         description='Addons to the XLED package for controling Twinkly LED lights',
-        long_description=README
+        long_description=README,
         license='MIT',
         classifiers=_classifiers,
         keywords=['xled','twinkly','light-effects'],
