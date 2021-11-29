@@ -24,31 +24,36 @@ with these steps:
 
 1. Make sure your leds are on-line (connected to you WiFi or your computer connected to them).
 
-2. Either you know the ip-address of your lights already, or the `discover` functionality provided in `xled` is used to find it.
+2. Start a python shell.
+```
+python
+```
+
+3. Either you know the ip-address of your lights already, or the `discover` functionality provided in `xled` is used to find it.
 ```
 from xled.discover import discover
 host = discover().ip_address
 ```
 
-3. Create a HighControlInterface object, connected to that ip-address.
+4. Create a HighControlInterface object, connected to that ip-address.
 ```
 from xled_plus.highcontrol import HighControlInterface
 ctr = HighControlInterface(host)
 ```
 
-4. Create one of a number of defined effects, adapted to you leds through the control object. 
+5. Create one of a number of defined effects, adapted to you leds through the control object. 
 ```
 from xled_plus.effects import *
-eff = Fire(ctr)
+eff = ScatteredSpectrum(ctr)
 ```
 
-5. Launch the effect, which uploads it on your lights and starts it.
+6. Launch the effect, which uploads it on your lights and starts it.
 ```
 eff.launch_movie()
 ```
 
 To install this package, either download it from github, or do `pip install
-xled_plus` (soon... not there yet).
+xled_plus`.
 
 Contributions, suggestions, and feedback are welcome. There is a
 discussion forum connected to these github pages.

@@ -1,4 +1,4 @@
-__version__ = '0.1.0.2'
+__version__ = '0.1.1'
 
 _classifiers = [
     'Development Status :: 4 - Beta',
@@ -23,7 +23,7 @@ def _run_setup():
         author='Anders Holst',
         author_email='anders.holst@ri.se',
         url='https://github.com/Anders-Holst/xled_plus',
-        py_modules=['xled_plus'],
+        packages=['xled_plus'],
         description='Addons to the XLED package for controling Twinkly LED lights',
         long_description='Addons to the XLED package for controling Twinkly LED lights',
         license='MIT',
