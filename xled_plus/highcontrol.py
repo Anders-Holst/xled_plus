@@ -605,28 +605,32 @@ class HighControlInterface(ControlInterface):
         return pat
 
     def fetch_layout(self, aspect=False):
-        res = self.get_led_layout()
-        if res["source"] == "3d":
-            if aspect:
-                self.layout = [
-                    (p["x"] * aspect[0] * 0.5, p["y"], p["z"] * aspect[1] * 0.5)
-                    for p in res["coordinates"]
-                ]
+        if self.version > (2, 2, 1):
+            res = self.get_led_layout()
+            if res["source"] == "3d":
+                if aspect:
+                    self.layout = [
+                        (p["x"] * aspect[0] * 0.5, p["y"], p["z"] * aspect[1] * 0.5)
+                        for p in res["coordinates"]
+                    ]
+                else:
+                    self.layout = [
+                        (p["x"] * 0.5, p["y"], p["z"] * 0.5) for p in res["coordinates"]
+                    ]
+                dim = 3
+            elif res["source"] == "2d":
+                if aspect:
+                    self.layout = [
+                        (p["x"] * aspect[0] * 0.5, p["y"]) for p in res["coordinates"]
+                    ]
+                else:
+                    self.layout = [(p["x"] * 0.5, p["y"]) for p in res["coordinates"]]
+                dim = 2
             else:
-                self.layout = [
-                    (p["x"] * 0.5, p["y"], p["z"] * 0.5) for p in res["coordinates"]
-                ]
-            dim = 3
-        elif res["source"] == "2d":
-            if aspect:
-                self.layout = [
-                    (p["x"] * aspect[0] * 0.5, p["y"]) for p in res["coordinates"]
-                ]
-            else:
-                self.layout = [(p["x"] * 0.5, p["y"]) for p in res["coordinates"]]
-            dim = 2
+                self.layout = [(p["x"],) for p in res["coordinates"]]
+                dim = 1
         else:
-            self.layout = [(p["x"],) for p in res["coordinates"]]
+            self.layout = [(float(self.circind(i)) / (self.num_leds - 1),) for i in range(self.num_leds)]
             dim = 1
         bounds = []
         cent = []
