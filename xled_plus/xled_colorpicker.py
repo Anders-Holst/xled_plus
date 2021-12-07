@@ -41,7 +41,8 @@ class XledColorPicker:
                 self.ctr.set_movies_current(id)
                 self.outermode = 'movie'
             if self.printrgb and self.printhsl:
-                print("HSL: ({:.4f}, {:.4f}, {:.4f})  RGB: {}", *hsl, hsl_color(*hsl))
+                args = hsl + (hsl_color(*hsl), )
+                print("HSL: ({:.4f}, {:.4f}, {:.4f})  RGB: {}".format(*args))
             elif self.printrgb:
                 print(hsl_color(*hsl))
             elif self.printhsl:
