@@ -315,7 +315,7 @@ def circular_hs_func(cycle, dists=False, probs=False):
         return ((tm / float(cycle) + dists[randomdiscrete(probs)]) % 1.0, 1.0)
 
     def func2(ind, tm):
-        return ((tm / float(cycle) + random.choise(dists)) % 1.0, 1.0)
+        return ((tm / float(cycle) + random.choice(dists)) % 1.0, 1.0)
 
     if not dists:
         return func0
