@@ -319,7 +319,7 @@ def circular_hs_func(cycle, dists=False, probs=False):
 
     if not dists:
         return func0
-    elif probs and len(probs) == len(cols):
+    elif probs and len(probs) == len(dists):
         return func1
     else:
         return func2
