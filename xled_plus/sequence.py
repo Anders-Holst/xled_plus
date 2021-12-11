@@ -141,11 +141,51 @@ class SpectrumSequence(Sequence):
         return hsl_color(x, 1.0, self.lightness)
 
 
+class RotatingAngleSequence(Sequence):
+    def initialize(self, torque):
+        deltaang = m.pi / 180.0 * torque / self.preferred_fps
+        self.sa = m.sin(deltaang)
+        self.ca = m.cos(deltaang)
+        if self.dim == 1:
+            self.ivect = (self.vect[0], 0.0)
+
+    def update(self, step):
+        if self.dim == 3:
+            self.vect = (
+                self.vect[0] * self.ca + self.vect[2] * self.sa,
+                self.vect[1],
+                self.vect[2] * self.ca - self.vect[0] * self.sa,
+            )
+        elif self.dim == 2:
+            self.vect = (
+                self.vect[0] * self.ca + self.vect[1] * self.sa,
+                self.vect[1] * self.ca - self.vect[0] * self.sa,
+            )
+        else:
+            self.ivect = (
+                self.ivect[0] * self.ca + self.ivect[1] * self.sa,
+                self.ivect[1] * self.ca - self.ivect[0] * self.sa,
+            )
+            self.vect = (self.ivect[0], )
+        self.currpos += self.speed * step
+
+
+class RotatingAngleColorSequence(ColorSequence, RotatingAngleSequence):
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=False, torque=False):
+        super(RotatingAngleColorSequence, self).__init__(ctr, cols, speed=speed, folds=folds, angle=angle)
+        self.initialize(torque)
+
+
+class RotatingAngleGradientSequence(GradientSequence, RotatingAngleSequence):
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=False, torque=False):
+        super(RotatingAngleGradientSequence, self).__init__(ctr, cols, speed=speed, folds=folds, angle=angle)
+        self.initialize(torque)
+
+
 class VaryingAngleSequence(Sequence):
-    def initialize(self, dim, maxfold):
-        self.dim = dim
+    def initialize(self, maxfold):
         self.maxfold = maxfold
-        if dim == 3:
+        if self.dim == 3:
             self.meander = ColorMeander("sphere")
         else:
             self.meander = ColorMeander("cylinder")
@@ -166,6 +206,36 @@ class VaryingAngleSequence(Sequence):
         self.currpos += self.speed * step
 
 
-class InfiniteSequence(Sequence):
-    def __init__(self):
-        pass
+class VaryingAngleColorSequence(ColorSequence, VaryingAngleSequence):
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=3.0):
+        super(VaryingAngleColorSequence, self).__init__(ctr, cols, speed, folds)
+        self.initialize(folds)
+
+
+class VaryingAngleGradientSequence(GradientSequence, VaryingAngleSequence):
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=3.0):
+        super(VaryingAngleGradientSequence, self).__init__(ctr, cols, speed, folds)
+        self.initialize(folds)
+
+
+class MeanderingSequence(VaryingAngleSequence):
+    def __init__(self, ctr):
+        super(MeanderingSequence, self).__init__(ctr, self.getcolor, 0.0, 0.0, 0.0)
+        self.initialize(1.0)
+        self.cm = ColorMeander("sphere")
+        self.colvec = [self.cm.get()] * 100
+        self.init_fps(2)
+
+    def reset(self, numframes):
+        self.currpos = 0.5
+
+    def update(self, step):
+        super(MeanderingSequence, self).update(step)
+        self.cm.step()
+        self.colvec = [self.cm.get()] + self.colvec[:-1]
+
+    def getcolor(self, x):
+        ind = int(x * len(self.colvec) - 0.5)
+        return self.colvec[min(max(0, ind), len(self.colvec)-1)]
+
+        
