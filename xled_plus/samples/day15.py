@@ -1,5 +1,5 @@
 """
-Day 16 - Looping lights, blue, purple, orange
+Day 15 - Looping lights, blue, purple, orange
 
 Same principle as yesterday with different colors.
 Because I think it looks nice.
