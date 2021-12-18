@@ -41,14 +41,15 @@ directory minus the ".py" suffix. It should find your Twinkly lights,
 upload the effect, and start playing it.
 
 5. Also, check out the discussion under the "Discussions" tab in this
-repository on GitHub, where the "Daily effects" comments the sample
-files and give some hints on how the effects can be modified.
+repository on GitHub, where the "Daily effects" thread contains
+comments on the samples and gives some hints on how the effects can be
+modified.
 
 6. You can also try the interactive, 3D, color picker:
 ```
 python -m xled_plus.xled_colorpicker
 ```
-which should bring up a window on your computer with a sperical color
+which should bring up a window on your computer with a spherical color
 body. Hovering with the mouse over it will display the color on the
 lights. Grab and drag the surface to rotate the sphere. Click on it to
 upload the color to your lights.
