@@ -12,6 +12,7 @@ and circles, but also simple letters and numbers.
 
 import math as m
 from random import random, gauss
+from copy import copy
 
 from xled_plus.ledcolor import hsl_color
 from xled_plus.effect_base import Effect
@@ -19,9 +20,12 @@ from xled_plus.colormeander import ColorMeander
 from xled_plus.pattern import random_hsl_color_func
 
 
-class Scene(object):
-    def __init__(self):
+
+class Scene(Effect):
+    def __init__(self, ctr):
+        super(Scene, self).__init__(ctr)
         self.shapes = []
+        self.occvec = [False] * ctr.num_leds
 
     def add_shape(self, sh):
         self.shapes.append(sh)
@@ -40,7 +44,7 @@ class Scene(object):
         else:
             return (0, 0, 0)
 
-    def get_color(self, coord):
+    def get_color(self, coord, ind):
         goaldepth = False
         colors = []
         for sh in self.shapes:
@@ -52,10 +56,18 @@ class Scene(object):
                     if not goaldepth:
                         goaldepth = sh.get_depth()
                     colors.append(col)
+        self.occvec[ind] = True if colors else False
         return self.blend_colors(colors)
 
-    def make_pattern(self, ctr):
-        return ctr.make_layout_pattern(self.get_color, style="centered")
+    def reset(self, numframes):
+        pass
+
+    def getnext(self):
+        self.update(1)
+        return self.ctr.make_layout_pattern(self.get_color, style="centered", index=True)
+
+    def getoccupancy(self):
+        return self.occvec
 
 
 class Shape(object):
@@ -566,6 +578,7 @@ letters = {
         ([0.177, 0.573], [0.0, 0.323], -45.0),
         ([0.0, 0.323], [0.0, 0.25], 0.0),
     ],
+    " ": [],
 }
 
 
@@ -587,8 +600,8 @@ class Letter(Lineart2D):
 
 
 class MutatingShapeScene(Scene):
-    def __init__(self):
-        super(MutatingShapeScene, self).__init__()
+    def __init__(self, ctr):
+        super(MutatingShapeScene, self).__init__(ctr)
         self.corners = 4
         self.rot = 0.0
         self.goalrot = random() - 0.5
@@ -639,19 +652,24 @@ class MutatingShapeScene(Scene):
 
 
 class MovingShapesScene(Scene):
-    def __init__(self):
-        super(MovingShapesScene, self).__init__()
+    def __init__(self, ctr):
+        super(MovingShapesScene, self).__init__(ctr)
         self.time = 0
         self.crtime = 0
-        self.freq = 0.4
+        self.freq = 0.5
+        self.horizon = self.preferred_fps * 20
+        self.replay = False
+        self.record = False
+        self.pre_shapes = []
+        self.colorfunc = random_hsl_color_func(sat=[0.5,1.0], light=0.0)
 
     def create(self):
         # slumpa ut form, färg, hastighet, rotation, riktning, offset från centrum, (djup)
-        col = hsl_color(random(), 1.0, 0.0)
-        speed = m.exp((random() - 0.5) * 2.3) / 20.0 * 0.1
-        rot = (random() - 0.5) * 360.0 / 20.0 * 0.3
+        col = self.colorfunc() # hsl_color(random(), 0.6 + 0.4*random(), 0.0)
+        speed = m.exp((random() - 0.5) * 1.1) / (self.preferred_fps * 6.0)
+        rot = (random() - 0.5) * 360.0 / self.preferred_fps * 0.1
         angle = random() * 2 * m.pi
-        offset = (random() - 0.5) * 2
+        offset = (random() - 0.5) * 1.6
         vec = (m.sin(angle), m.cos(angle))
         cent = (-vec[0] * 1.5 + vec[1] * offset, -vec[1] * 1.5 - vec[0] * offset)
         vel = (vec[0] * speed, vec[1] * speed)
@@ -659,39 +677,67 @@ class MovingShapesScene(Scene):
         sp = int(random() * (2 + 4 + 5))
         if sp == 0:  # circle
             sizef = random() * 0.8 + 0.1
-            shape = Ellipse(cent, 0.0, sizef, sizef, col)
+            shape = Ellipse(cent, 0.0, sizef*0.5, sizef*0.5, col)
         elif sp == 1:  # ellipse
             ratiof = random() * 0.8
-            shape = Ellipse(cent, 0.0, (1.0 + ratiof) * 0.5, (1.0 - ratiof) * 0.5, col)
+            shape = Ellipse(cent, 0.0, (1.0 + ratiof) * 0.25, (1.0 - ratiof) * 0.25, col)
         elif sp < 6:  # Polygon
             corners = sp + 1
             sizef = random() * 0.8 + 0.1
-            shape = Polygon(corners, cent, 0.0, sizef, col)
+            shape = Polygon(corners, cent, 0.0, sizef*0.5, col)
         else:  # Star
             corners = sp - 4
             ratiof = random() * 0.8
             shape = Star(
-                corners, cent, 0.0, (1.0 + ratiof) * 0.5, (1.0 - ratiof) * 0.5, col
+                corners, cent, 0.0, (1.0 + ratiof) * 0.25, (1.0 - ratiof) * 0.25, col
             )
         shape.set_speed(vel[0], vel[1])
         shape.set_torque(rot)
         shape.duetime = self.time + nstep
-        self.add_shape(shape)
+        return shape
+
+    def reset(self, numframes):
+        if numframes and self.horizon:
+            self.time = -self.horizon
+            self.crtime = self.time
+            self.record = True
+            while self.time < 0:
+                self.update(1)
+            self.record = False
+        else:
+            self.time = 0
+            self.crtime = 0
+            self.replay = False
+            self.record = False
 
     def update(self, step):
         for sh in reversed(self.shapes):
             if sh.duetime < self.time:
                 self.shapes.remove(sh)
         if self.time >= self.crtime:
-            self.create()
-            self.crtime = self.time + int(-m.log(random()) / self.freq * 20.0)
+            if self.record:
+                sh = self.create()
+                self.add_shape(copy(sh))
+                sh.duetime += self.preferred_frames
+                self.crtime = self.time + int(-m.log(random()*0.94 + 0.03) / self.freq * self.preferred_fps)
+                self.pre_shapes.append((self.crtime + self.preferred_frames, sh))
+            elif self.replay:
+                if self.pre_shapes:
+                    self.add_shape(self.pre_shapes[0][1])
+                    self.crtime = self.pre_shapes[0][0]
+                    self.pre_shapes = self.pre_shapes[1:]
+            else:
+                self.add_shape(self.create())
+                self.crtime = self.time + int(-m.log(random()*0.94 + 0.03) / self.freq * self.preferred_fps)
+                if self.pre_shapes and self.crtime >= self.pre_shapes[0][0]:
+                    self.replay = True
         super(MovingShapesScene, self).update(step)
         self.time += step
 
 
 class CaleidoScene(MovingShapesScene):
-    def __init__(self, sym):
-        super(CaleidoScene, self).__init__()
+    def __init__(self, ctr, sym):
+        super(CaleidoScene, self).__init__(ctr)
         self.freq = 0.6
         self.symang = m.pi / sym
 
@@ -726,7 +772,7 @@ class CaleidoScene(MovingShapesScene):
         shape.set_speed(vel[0], vel[1])
         shape.set_torque(rot)
         shape.duetime = self.time + nstep
-        self.add_shape(shape)
+        return shape
 
     def get_color(self, coord):
         r = m.sqrt(coord[0] ** 2 + coord[1] ** 2)
@@ -736,8 +782,8 @@ class CaleidoScene(MovingShapesScene):
 
 
 class BouncingScene(MovingShapesScene):
-    def __init__(self, num):
-        super(BouncingScene, self).__init__()
+    def __init__(self, ctr, num):
+        super(BouncingScene, self).__init__(ctr)
         for i in range(num):
             self.create()
 
@@ -745,7 +791,7 @@ class BouncingScene(MovingShapesScene):
         cent = (gauss(0.0, 0.2), gauss(0.0, 0.2))
         shape = Blob(cent, 0.12, random_hsl_color_func(light=0.0)())
         shape.speed = (gauss(0.0, 0.1), gauss(0.0, 0.1))
-        self.add_shape(shape)
+        return shape
 
     def dot(self, v1, v2):
         return sum(map(lambda x1, x2: x1 * x2, v1, v2))
@@ -762,21 +808,8 @@ class BouncingScene(MovingShapesScene):
             if self.dot(sh.cent, sh.cent) > 1.0 and self.dot(sh.cent, sh.speed) > 0.0:
                 delta = self.dot(sh.cent, sh.speed) / self.dot(sh.cent, sh.cent)
                 sh.speed = self.add(sh.speed, self.scale(sh.cent, -2 * delta))
-        super(MovingShapesScene, self).update(step)
-        self.time += step
+        super(BouncingScene, self).update(step)
 
 
 # ---------------------------------------------------------
 
-
-class SceneEffect(Effect):
-    def __init__(self, ctr, scene):
-        super(SceneEffect, self).__init__(ctr)
-        self.scene = scene
-
-    def reset(self, numframes):
-        pass
-
-    def getnext(self):
-        self.scene.update(1)
-        return self.scene.make_pattern(self.ctr)
