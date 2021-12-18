@@ -18,43 +18,40 @@ code herein are provided as-is with absolutely no guarantee of its
 function for any specific purpose. The code in this package is under
 the MIT license.
 
-There is currently no general command line interface provided, but you
-need to give commands to `python`. Using this package typically goes
-with these steps: 
 
-1. Make sure your leds are on-line (connected to you WiFi or your computer connected to them).
+### Getting started
 
-2. Start a python shell.
-```
-python
-```
+The easiest way to get started is:
 
-3. Either you know the ip-address of your lights already, or the `discover` functionality provided in `xled` is used to find it.
+1. Make sure you have Python installed on your computer.
+
+2. Download the XLED Plus package, either through GitHub, or by doing
 ```
-from xled.discover import discover
-host = discover().ip_address
+pip install xled_plus
 ```
 
-4. Create a HighControlInterface object, connected to that ip-address.
-```
-from xled_plus.highcontrol import HighControlInterface
-ctr = HighControlInterface(host)
-```
+3. Make sure your Twinkly lights are on-line, i.e connected to the same WiFi as your computer.
 
-5. Create one of a number of defined effects, adapted to you leds through the control object. 
+4. Try out some of the sample effects in the "xled_plus/samples/" directory: 
 ```
-from xled_plus.effects import *
-eff = ScatteredSpectrum(ctr)
+python -m xled_plus.samples.spectrumlight
 ```
+where "spectrumlight" can be replaced by another filename in that
+directory minus the ".py" suffix. It should find your Twinkly lights,
+upload the effect, and start playing it.
 
-6. Launch the effect, which uploads it on your lights and starts it.
-```
-eff.launch_movie()
-```
+5. Also, check out the discussion under the "Discussions" tab in this
+repository on GitHub, where the "Daily effects" comments the sample
+files and give some hints on how the effects can be modified.
 
-To install this package, either download it from github, or do `pip install
-xled_plus`.
+6. You can also try the interactive, 3D, color picker:
+```
+python -m xled_plus.xled_colorpicker
+```
+which should bring up a window on your computer with a sperical color
+body. Hovering with the mouse over it will display the color on the
+lights. Grab and drag the surface to rotate the sphere. Click on it to
+upload the color to your lights.
 
-Contributions, suggestions, and feedback are welcome. There is a
-discussion forum connected to these github pages.
+
 
