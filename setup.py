@@ -1,4 +1,4 @@
-__version__ = '0.1.20'
+__version__ = '0.1.21'
 
 _classifiers = [
     'Development Status :: 4 - Beta',

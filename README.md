@@ -46,6 +46,11 @@ comments on the samples and gives some hints on how the effects can be
 modified.
 
 6. You can also try the interactive, 3D, color picker:
+You need first to download the "colorsphere" package
+```
+pip install colorsphere
+```
+Then you can start it with
 ```
 python -m xled_plus.xled_colorpicker
 ```
