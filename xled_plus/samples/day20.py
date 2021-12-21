@@ -1,5 +1,5 @@
 """
-Day 20 - Caleidoscope
+Day 20 - Kaleidoscope
 
 Slowly changing symmetric pattern of random colors.
 Again, looks best on a 2D layout, and with correctly adjusted aspect:
@@ -9,9 +9,9 @@ last line of the code below.
 
 from xled_plus.samples.sample_setup import *
 
-class SoftCaleidoScene(MovingShapesScene):
+class SoftKaleidoScene(MovingShapesScene):
     def __init__(self, ctr, sym, colfunc):
-        super(SoftCaleidoScene, self).__init__(ctr)
+        super(SoftKaleidoScene, self).__init__(ctr)
         self.freq = 0.6
         self.symang = m.pi / sym
         self.colfunc = colfunc
@@ -40,14 +40,14 @@ class SoftCaleidoScene(MovingShapesScene):
         r = m.sqrt(coord[0] ** 2 + coord[1] ** 2)
         a = m.atan2(coord[1], coord[0])
         a = abs((a % (2 * self.symang)) - self.symang)
-        return super(SoftCaleidoScene, self).get_color((m.sin(a) * r, m.cos(a) * r), ind)
+        return super(SoftKaleidoScene, self).get_color((m.sin(a) * r, m.cos(a) * r), ind)
 
     def getnext(self):
-        pat1 = super(SoftCaleidoScene, self).getnext()
+        pat1 = super(SoftKaleidoScene, self).getnext()
         vec = self.getoccupancy()
         pat = [pat1[i] if vec[i] else self.bgpat[i] for i in range(self.ctr.num_leds)]
         return pat
 
 ctr = setup_control()
 ctr.adjust_layout_aspect(1.0)  # How many times wider than high is the led installation?
-SoftCaleidoScene(ctr, 3, random_hsl_color_func(light=0.0)).launch_movie()
+SoftKaleidoScene(ctr, 3, random_hsl_color_func(light=0.0)).launch_movie()
