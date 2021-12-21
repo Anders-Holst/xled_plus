@@ -15,7 +15,7 @@ class SoftKaleidoScene(MovingShapesScene):
         self.freq = 0.6
         self.symang = m.pi / sym
         self.colfunc = colfunc
-        self.bgpat = ctr.make_solid_pattern(hsl_color(0,0,-0.5))
+        self.bgcol = hsl_color(0, 0, -0.5)
         self.horizon = 320
         self.preferred_frames = 640
 
@@ -28,9 +28,9 @@ class SoftKaleidoScene(MovingShapesScene):
         vec = (m.sin(angle), m.cos(angle))
         cent = (-vec[0] * 1.5 + vec[1] * offset, -vec[1] * 1.5 - vec[0] * offset + 0.5)
         vel = (vec[0] * speed, vec[1] * speed)
-        nstep = int(2.0 / speed)
-        #shape = Blob(cent, rad, col)
-        shape = Ellipse(cent, 0.0, rad, rad, col)
+        nstep = int(3.0 / speed)
+        shape = Blob(cent, rad, col)
+        #shape = Ellipse(cent, 0.0, rad, rad, col)
         shape.set_depth(0.0)
         shape.set_speed(vel[0], vel[1])
         shape.duetime = self.time + nstep
@@ -42,12 +42,20 @@ class SoftKaleidoScene(MovingShapesScene):
         a = abs((a % (2 * self.symang)) - self.symang)
         return super(SoftKaleidoScene, self).get_color((m.sin(a) * r, m.cos(a) * r), ind)
 
-    def getnext(self):
-        pat1 = super(SoftKaleidoScene, self).getnext()
-        vec = self.getoccupancy()
-        pat = [pat1[i] if vec[i] else self.bgpat[i] for i in range(self.ctr.num_leds)]
-        return pat
+    def blend_colors(self, colors):
+        cols = colors
+        br = list(map(lambda rgb: color_brightness(*rgb), colors))
+        maxbr = max(br) if br else 0.0
+        sumbr = sum(br) if br else 0.0
+        bgbr = color_brightness(*self.bgcol)
+        if maxbr < bgbr:
+            delta = (bgbr - maxbr) / bgbr
+            sumbr += (bgbr - maxbr)
+            maxbr = bgbr
+            cols = cols + [tuple(map(lambda x: x*delta, self.bgcol))]
+        sumcol = tuple(map(lambda *args: int(round(sum(args) * maxbr / sumbr)), *cols))
+        return sumcol
 
 ctr = setup_control()
 ctr.adjust_layout_aspect(1.0)  # How many times wider than high is the led installation?
-SoftKaleidoScene(ctr, 3, random_hsl_color_func(light=0.0)).launch_movie()
+SoftKaleidoScene(ctr, 5, random_hsl_color_func(light=0.0)).launch_movie()
