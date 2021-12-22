@@ -90,13 +90,14 @@ class SnowingScene(MovingShapesScene):
         cf1 = random_hsl_color_func(hue=[0.06,0.12], sat=1.0, light=[0.2,0.6])
         cf2 = random_hsl_color_func(hue=[0.96,0.06], sat=0.7, light=0.0)
         self.shapecolfuncs = [cf1, cf1, cf2, cf2]
+        self.horizon = 320
         self.preferred_frames = 640
 
     def create(self):
         tp = randomdiscrete(self.shapeprobs)
         col = self.shapecolfuncs[tp]()
-        dist = 1.0 + random() + (tp // 2)*2
-        speed = 0.02 / dist
+        dist = 2.0 + random() + (tp // 2)*2
+        speed = 0.05 / dist
         rot = (random() - 0.5) * 6.0
         offset = (random() * 2 - 1.0, 1.5)
         vec = (0.0, -speed)
