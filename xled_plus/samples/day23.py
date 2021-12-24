@@ -20,8 +20,8 @@ class Crystal(RotateEffect):
         shuffle(perm)
         self.nsparks = 0.02 * nleds
         self.white = hsl_color(0.0, 0.0, 1.0)
-        self.preferred_fps = 12
         super(Crystal, self).__init__(ctr, pat, perm, step=2)
+        self.preferred_fps = 12
 
     def getnext(self):
         pat1 = super(Crystal, self).getnext()
