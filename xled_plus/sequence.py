@@ -19,7 +19,7 @@ the azimuthal angle.
 
 from xled_plus.effect_base import Effect
 from xled_plus.colormeander import ColorMeander
-from xled_plus.pattern import blendcolors
+from xled_plus.pattern import blendcolors, dimcolor
 from xled_plus.ledcolor import hsl_color
 import math as m
 
@@ -186,13 +186,13 @@ class VaryingAngleSequence(Sequence):
     def initialize(self, maxfold):
         self.maxfold = maxfold
         if self.dim == 3:
-            self.meander = ColorMeander("sphere")
+            self.mangle = ColorMeander("sphere")
         else:
-            self.meander = ColorMeander("cylinder")
+            self.mangle = ColorMeander("cylinder")
 
     def update(self, step):
-        self.meander.step()
-        (x, y, z) = self.meander.get_xyz()
+        self.mangle.step()
+        (x, y, z) = self.mangle.get_xyz()
         if self.dim == 3:
             self.vect = (
                 x * self.maxfold / 2.0,
@@ -219,23 +219,66 @@ class VaryingAngleGradientSequence(GradientSequence, VaryingAngleSequence):
 
 
 class MeanderingSequence(VaryingAngleSequence):
-    def __init__(self, ctr):
-        super(MeanderingSequence, self).__init__(ctr, self.getcolor, 0.0, 0.0, 0.0)
+    def __init__(self, ctr, fixangle=False):
+        super(MeanderingSequence, self).__init__(ctr, self.getcolor, 0.0, 1.0, fixangle)
+        self.fixangle = fixangle
         self.initialize(1.0)
         self.cm = ColorMeander("sphere")
-        self.colvec = [self.cm.get()] * 100
+        self.colvec = [self.cm.get()] * 200
+        self.iter = 1
         self.init_fps(2)
+        self.preferred_frames = 800
 
     def reset(self, numframes):
         self.currpos = 0.5
+        if numframes:
+            self.mangle.steplen *= 10
+            self.mangle.noiselev *= 3
+            self.iter = 9
+            self.preferred_fps /= 10
 
     def update(self, step):
-        super(MeanderingSequence, self).update(step)
-        self.cm.step()
-        self.colvec = [self.cm.get()] + self.colvec[:-1]
+        if self.fixangle is False:
+            super(MeanderingSequence, self).update(step)
+        for i in range(self.iter):
+            self.cm.step()
+            self.colvec = [self.cm.get()] + self.colvec[:-1]
 
     def getcolor(self, x):
         ind = int(x * len(self.colvec) - 0.5)
         return self.colvec[min(max(0, ind), len(self.colvec)-1)]
 
-        
+
+class MeanderingTandemSequence(VaryingAngleSequence):
+    def __init__(self, ctr, gap=False, fixangle=False):
+        super(MeanderingTandemSequence, self).__init__(ctr, self.getcolor, 0.0, 1.0, fixangle)
+        self.initialize(1.0)
+        self.gap = gap
+        self.fixangle = fixangle
+        self.cm = ColorMeander("sphere")
+        self.init_fps(2)
+        self.preferred_frames = 800
+
+    def reset(self, numframes):
+        self.currpos = 0.5
+        if numframes:
+            self.cm.steplen *= 10
+            self.cm.noiselev *= 3
+            self.preferred_fps /= 10
+
+    def update(self, step):
+        if self.fixangle is False:
+            super(MeanderingTandemSequence, self).update(step)
+        self.cm.step()
+        (h, s, l) = self.cm.get_hsl()
+        self.hsl1 = (h, s, l)
+        self.hsl2 = ((h + 0.5) % 1.0, s, l)
+
+    def getcolor(self, x):
+        hsl = self.hsl1 if x < 0.5 else self.hsl2
+        fact = min(1.0, abs(2*x - 1.0) / abs(self.gap)) if self.gap else 1.0
+        if self.gap >= 0.0:
+            return hsl_color(hsl[0], hsl[1]*fact, hsl[2])
+        else:
+            return hsl_color(hsl[0], hsl[1], hsl[2]) if fact == 1.0 else (0,0,0)
+

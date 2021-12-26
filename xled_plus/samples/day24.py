@@ -16,6 +16,7 @@ class ChristmasBallsScene(MovingShapesScene):
         self.blink = hsl_color(0.0, 0.0, 1.0)
         self.bgpat = make_random_select_color_pattern(ctr, self.whites)
         self.preferred_frames = 640
+        self.proj2D3D = "cylshell"
 
     def create(self):
         tp = int(random() * len(self.colors))

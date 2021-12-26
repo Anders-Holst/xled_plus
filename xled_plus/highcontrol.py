@@ -651,11 +651,16 @@ class HighControlInterface(ControlInterface):
         }
         if dim == 3:
             crad = 0.0
+            hsrad = 0.0
             for p in self.layout:
                 r2 = (p[0] - cent[0]) ** 2 + (p[2] - cent[2]) ** 2
                 if r2 > crad:
                     crad = r2
+                r2 += (p[1] - bounds[1][0]) ** 2
+                if r2 > hsrad:
+                    hsrad = r2
             self.layout_bounds["cylradius"] = crad ** 0.5
+            self.layout_bounds["halfsradius"] = hsrad ** 0.5
 
     def layout_transform(self, pos, style):
         # style == 'square', 'rect', 'centered', 'cylinder', 'sphere'
@@ -680,20 +685,30 @@ class HighControlInterface(ControlInterface):
             # xz-radius max 1, angle in [-180,180], y in [0, 1]
             crad = self.layout_bounds["cylradius"]
             ybounds = self.layout_bounds["bounds"][1]
-            p = ((v - c) / crad for v, c in zip(pos, self.layout_bounds["center"]))
+            p = tuple((v - c) / crad for v, c in zip(pos, self.layout_bounds["center"]))
             return (
                 m.sqrt(p[0] ** 2 + p[2] ** 2),
-                m.atan2(p[2], p[0]) * 180.0 / m.pi,
-                (p[1] * crad - ybounds[0]) / (ybounds[1] - ybounds[0]),
+                m.atan2(p[0], p[2]) * 180.0 / m.pi,
+                (pos[1] - ybounds[0]) / (ybounds[1] - ybounds[0]),
             )
         elif style == "sphere" and self.layout_bounds["dim"] == 3:
             # radius max 1, longitude [-180,180], latitude [-90,90]
             rad = self.layout_bounds["radius"]
-            p = ((v - c) / rad for v, c in zip(pos, self.layout_bounds["center"]))
+            p = tuple((v - c) / rad for v, c in zip(pos, self.layout_bounds["center"]))
             return (
                 m.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2),
-                m.atan2(p[2], p[0]) * 180.0 / m.pi,
+                m.atan2(p[0], p[2]) * 180.0 / m.pi,
                 m.atan2(p[1], m.sqrt(p[0] ** 2 + p[2] ** 2)) * 180.0 / m.pi,
+            )
+        elif style == "halfsphere" and self.layout_bounds["dim"] == 3:
+            # radius max 1, longitude [-180,180], polar angle [0,90]
+            rad = self.layout_bounds["halfsradius"]
+            cent = (self.layout_bounds["center"][0], self.layout_bounds["bounds"][1][0], self.layout_bounds["center"][2])
+            p = tuple((v - c) / rad for v, c in zip(pos, cent))
+            return (
+                m.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2),
+                m.atan2(p[0], p[2]) * 180.0 / m.pi,
+                m.atan2(m.sqrt(p[0] ** 2 + p[2] ** 2), p[1]) * 180.0 / m.pi,
             )
         else:
             return pos

@@ -92,6 +92,7 @@ class SnowingScene(MovingShapesScene):
         self.shapecolfuncs = [cf1, cf1, cf2, cf2]
         self.horizon = 320
         self.preferred_frames = 640
+        self.proj2D3D = "cylshell"
 
     def create(self):
         tp = randomdiscrete(self.shapeprobs)

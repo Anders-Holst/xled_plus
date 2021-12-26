@@ -17,7 +17,7 @@ from copy import copy
 from xled_plus.ledcolor import hsl_color
 from xled_plus.effect_base import Effect
 from xled_plus.colormeander import ColorMeander
-from xled_plus.pattern import random_hsl_color_func
+from xled_plus.pattern import random_hsl_color_func, dimcolor
 
 
 
@@ -26,10 +26,12 @@ class Scene(Effect):
         super(Scene, self).__init__(ctr)
         self.shapes = []
         self.occvec = [False] * ctr.num_leds
+        self.bgfunc = False
+        self.proj2D3D = False  # 'cylshell', 'cylbase', 'halfsphere' 
 
     def add_shape(self, sh):
         self.shapes.append(sh)
-        self.shapes.sort(key=lambda sh: sh.get_depth())
+        self.shapes.sort(key=lambda sh: sh.depth)
 
     def remove_shape(self, sh):
         self.shapes.remove(sh)
@@ -42,28 +44,43 @@ class Scene(Effect):
         if colors:
             return tuple(map(lambda *args: int(round(sum(args) / len(args))), *colors))
         else:
-            return (0, 0, 0)
+            return False
 
     def get_color(self, coord, ind):
         goaldepth = False
         colors = []
         for sh in self.shapes:
-            if goaldepth and sh.get_depth != goaldepth:
+            if goaldepth and sh.depth != goaldepth:
                 break
             else:
-                col = sh.get_color(coord)
+                col = sh.get_color(coord, ind)
                 if col:
                     if not goaldepth:
-                        goaldepth = sh.get_depth()
+                        goaldepth = sh.depth
                     colors.append(col)
         self.occvec[ind] = True if colors else False
-        return self.blend_colors(colors)
+        return self.blend_colors(colors) or (self.bgfunc(coord, ind) if self.bgfunc else (0, 0, 0))
 
     def reset(self, numframes):
         pass
 
     def getnext(self):
         self.update(1)
+        dim = self.ctr.get_layout_bounds()["dim"]
+        if dim == 3 and self.proj2D3D:
+            if self.proj2D3D == "cylbase":
+                fact = self.ctr.get_layout_bounds()["radius"] / self.ctr.get_layout_bounds()["cylradius"]
+                colfunc = lambda pos, ind: self.get_color((pos[0]*fact, pos[2]*fact), ind)
+                return self.ctr.make_layout_pattern(colfunc, style="centered", index=True)
+            elif self.proj2D3D == "cylshell":
+                hyp = ((m.pi * self.ctr.get_layout_bounds()["cylradius"]) ** 2 + 0.25) ** 0.5
+                xfact = m.pi / 180.0 * self.ctr.get_layout_bounds()["cylradius"] / hyp
+                yfact = 1.0 / hyp
+                colfunc = lambda pos, ind: self.get_color((pos[1]*xfact, (pos[2] - 0.5)*yfact), ind)
+                return self.ctr.make_layout_pattern(colfunc, style="cylinder", index=True)
+            elif self.proj2D3D == "halfsphere":
+                colfunc = lambda pos, ind: self.get_color((m.sin(pos[1]*m.pi/180.0)*pos[2]/90.0, -m.cos(pos[1]*m.pi/180.0)*pos[2]/90.0), ind)
+                return self.ctr.make_layout_pattern(colfunc, style="halfsphere", index=True)
         return self.ctr.make_layout_pattern(self.get_color, style="centered", index=True)
 
     def getoccupancy(self):
@@ -71,32 +88,25 @@ class Scene(Effect):
 
 
 class Shape(object):
-    def __init__(self):
+    def __init__(self, cent, angle):
         self.depth = 0
+        self.color = False
+        self.cent = cent
+        self.speed = (0.0, ) * len(cent)
+        self.angle = angle * m.pi / 180.0
+        self.torque = 0.0
 
     def is_inside(self, coord):
         pass
 
-    def get_color(self, coord):
-        pass
-
-    def get_depth(self):
-        return self.depth
+    def get_color(self, coord, ind):
+        if self.is_inside(coord):
+            return self.color(coord, ind) if callable(self.color) else self.color
+        else:
+            return False
 
     def set_depth(self, depth):
         self.depth = depth
-
-    def update(self, step):
-        pass
-
-
-class MovingShape(Shape):
-    def __init__(self, cent, angle):
-        super(MovingShape, self).__init__()
-        self.cent = cent
-        self.angle = angle * m.pi / 180.0
-        self.speed = (0.0, 0.0)
-        self.torque = 0.0
 
     def set_speed(self, vx, vy):
         self.speed = (vx, vy)
@@ -105,14 +115,11 @@ class MovingShape(Shape):
         self.torque = va * m.pi / 180.0
 
     def update(self, step):
-        self.cent = (
-            self.cent[0] + step * self.speed[0],
-            self.cent[1] + step * self.speed[1],
-        )
+        self.cent = tuple(map(lambda c, s: c + step * s, self.cent, self.speed))
         self.angle = (self.angle + step * self.torque) % 360.0
 
 
-class Blob(MovingShape):
+class Blob(Shape):
     def __init__(self, cent, rad, col):
         super(Blob, self).__init__(cent, 0.0)
         self.rad = rad
@@ -123,17 +130,18 @@ class Blob(MovingShape):
             sum(map(lambda x1, x2: (x1 - x2) ** 2, self.cent, coord)) <= self.rad ** 2
         )
 
-    def get_color(self, coord):
+    def get_color(self, coord, ind):
         dist = (
             m.sqrt(sum(map(lambda x1, x2: (x1 - x2) ** 2, self.cent, coord))) / self.rad
         )
         if dist > 1.0:
             return False
         else:
-            return tuple(map(lambda x: int(round(x * (1.0 - dist))), self.color))
+            col = self.color(coord, ind) if callable(self.color) else self.color
+            return dimcolor(col, 1.0 - dist)
 
 
-class Polygon(MovingShape):
+class Polygon(Shape):
     def __init__(self, num, cent, angle, smallrad, col):
         assert num >= 3
         super(Polygon, self).__init__(cent, angle)
@@ -155,14 +163,8 @@ class Polygon(MovingShape):
             ) - m.pi / self.num
             return dist <= self.rad1 / m.cos(ang)
 
-    def get_color(self, coord):
-        if self.is_inside(coord):
-            return self.color
-        else:
-            return False
 
-
-class Ellipse(MovingShape):
+class Ellipse(Shape):
     def __init__(self, cent, angle, largerad, smallrad, col):
         super(Ellipse, self).__init__(cent, angle)
         self.rad1 = smallrad
@@ -182,14 +184,8 @@ class Ellipse(MovingShape):
                 (self.rad1 * m.cos(ang)) ** 2 + (self.rad2 * m.sin(ang)) ** 2
             )
 
-    def get_color(self, coord):
-        if self.is_inside(coord):
-            return self.color
-        else:
-            return False
 
-
-class Star(MovingShape):
+class Star(Shape):
     def __init__(self, num, cent, angle, largerad, smallrad, col):
         assert num >= 2
         super(Star, self).__init__(cent, angle)
@@ -218,12 +214,6 @@ class Star(MovingShape):
                 - m.pi / self.num
             )
             return dist <= self.rad0 / m.cos(ang + self.ang0)
-
-    def get_color(self, coord):
-        if self.is_inside(coord):
-            return self.color
-        else:
-            return False
 
 
 # Tänk ett antal punkter med linjer eller arcs mellan
@@ -359,12 +349,6 @@ class Lineart2D(Shape):
             if r >= seg[2] - self.lw / 2 and r <= seg[2] + self.lw / 2 and a <= seg[3]:
                 return True
         return False
-
-    def get_color(self, coord):
-        if self.is_inside(coord):
-            return self.color
-        else:
-            return False
 
 
 letters = {
@@ -774,11 +758,11 @@ class CaleidoScene(MovingShapesScene):
         shape.duetime = self.time + nstep
         return shape
 
-    def get_color(self, coord):
+    def get_color(self, coord, ind):
         r = m.sqrt(coord[0] ** 2 + coord[1] ** 2)
         a = m.atan2(coord[1], coord[0])
         a = abs((a % (2 * self.symang)) - self.symang)
-        return super(CaleidoScene, self).get_color((m.sin(a) * r, m.cos(a) * r))
+        return super(CaleidoScene, self).get_color((m.sin(a) * r, m.cos(a) * r), ind)
 
 
 class BouncingScene(MovingShapesScene):

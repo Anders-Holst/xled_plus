@@ -45,7 +45,7 @@ class Moon(Ellipse):
     def update(self, step):
         self.phase = (self.phase + 180.0 + self.speed * step) % 360 - 180.0
 
-    def get_color(self, coord):
+    def get_color(self, coord, ind):
         if self.is_inside(coord):
             if self.moonlit(coord):
                 return self.light
@@ -62,6 +62,7 @@ class MoonScene(MovingShapesScene):
         self.add_shape(self.moon)
         self.preferred_frames = 360
         self.preferred_fps = 6
+        self.proj2D3D = "cylshell"
 
     def whitefunc(self, *args):
         r = random()

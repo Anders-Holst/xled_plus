@@ -18,6 +18,7 @@ class SoftKaleidoScene(MovingShapesScene):
         self.bgcol = hsl_color(0, 0, -0.5)
         self.horizon = 320
         self.preferred_frames = 640
+        self.proj2D3D = "halfsphere"
 
     def create(self):
         col = self.colfunc(self.time)

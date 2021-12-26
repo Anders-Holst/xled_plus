@@ -26,6 +26,7 @@ class RotatingStarScene(Scene):
         self.add_shape(self.star1b)
         self.add_shape(self.star1c)
         self.add_shape(self.star2)
+        self.proj2D3D = "cylbase"
 
     def update(self, step):
         self.star1a.update(step)
