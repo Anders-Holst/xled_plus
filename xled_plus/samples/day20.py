@@ -54,7 +54,7 @@ class SoftKaleidoScene(MovingShapesScene):
             sumbr += (bgbr - maxbr)
             maxbr = bgbr
             cols = cols + [tuple(map(lambda x: x*delta, self.bgcol))]
-        sumcol = tuple(map(lambda *args: int(round(sum(args) * maxbr / sumbr)), *cols))
+        sumcol = tuple(map(lambda *args: max(0, min(255, int(round(sum(args) * maxbr / sumbr)))), *cols))
         return sumcol
 
 ctr = setup_control()
