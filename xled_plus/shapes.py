@@ -11,7 +11,7 @@ and circles, but also simple letters and numbers.
 
 
 import math as m
-from random import random, gauss
+from random import random, gauss, uniform
 from copy import copy
 
 from xled_plus.ledcolor import hsl_color
@@ -85,6 +85,29 @@ class Scene(Effect):
 
     def getoccupancy(self):
         return self.occvec
+
+    def get_scene_bounds(self):
+        bounds = self.ctr.get_layout_bounds()
+        if bounds["dim"] == 3:
+            if self.proj2D3D == "cylbase":
+                fact = self.ctr.get_layout_bounds()["radius"] / self.ctr.get_layout_bounds()["cylradius"]
+                return [(fact * bounds["bounds"][0][0], fact * bounds["bounds"][0][1]),
+                        (fact * bounds["bounds"][2][0], fact * bounds["bounds"][2][1])]
+            elif self.proj2D3D == "cylshell":
+                hyp = ((m.pi * bounds["cylradius"]) ** 2 + 0.25) ** 0.5
+                xfact = m.pi * bounds["cylradius"] / hyp
+                yfact = 0.5 / hyp
+                return [(-xfact, xfact), (-yfact, yfact)]
+            elif self.proj2D3D == "halfsphere":
+                return [(-1.0, 1.0), (-1.0, 1.0)]
+            else:
+                return bounds["bounds"]
+        elif bounds["dim"] == 2:
+            fact = 1.0 / bounds["radius"]
+            return [(fact * bounds["bounds"][0][0], fact * bounds["bounds"][0][1]),
+                    (fact * bounds["bounds"][1][0], fact * bounds["bounds"][1][1])]
+        else:
+            return bounds["bounds"]
 
 
 class Shape(object):
@@ -226,6 +249,7 @@ class Star(Shape):
 #
 class Lineart2D(Shape):
     def __init__(self):
+        super(Lineart2D, self).__init__((0.0, 0.0), 0.0)
         self.points = []
         self.lines = []
         self.arcs = []
@@ -574,10 +598,26 @@ class Letter(Lineart2D):
             for seg in segs:
                 self.add_segment(*seg)
         self.color = color
-        self.off = [-pos[0], -pos[1]]
-        ca = m.cos(angle * m.pi / 180.0) / size
-        sa = m.sin(angle * m.pi / 180.0) / size
+        self.size = size
+        self.off = [0.0, 0.0]
+        self.angle = 0.0
+        self.speed = (0.0, 0.0)
+        self.torque = 0.0
+        self.change_pos(pos)
+        self.change_angle(angle)
+
+    def change_angle(self, deltaangle):
+        self.angle += deltaangle
+        ca = m.cos(self.angle * m.pi / 180.0) / self.size
+        sa = m.sin(self.angle * m.pi / 180.0) / self.size
         self.mat = [[ca, sa], [-sa, ca]]
+
+    def change_pos(self, delta):
+        self.off = [self.off[0] - delta[0], self.off[1] - delta[1]]
+
+    def update(self, step):
+        self.change_pos((step * self.speed[0], step * self.speed[1]))
+        self.change_angle(step * self.torque)
 
 
 # Example scenes
@@ -719,6 +759,61 @@ class MovingShapesScene(Scene):
         self.time += step
 
 
+class RunningText(MovingShapesScene):
+    def __init__(self, ctr, txt, color, linewidth=0.1, size=0.6, speed=1.0):
+        super(RunningText, self).__init__(ctr)
+        self.textcolor = color
+        self.lw = linewidth
+        self.txt = txt
+        self.size = size
+        self.speed = speed
+        self.horizon = 0
+        self.proj2D3D = "cylshell"
+        self.place_text()
+        self.preferred_frames = self.nsteps
+
+    def set_fps(self, fps):
+        self.preferred_fps = fps
+        self.place_text()
+        self.preferred_frames = self.nsteps
+        
+    def place_text(self):
+        bounds = self.get_scene_bounds()
+        # Size is relative the total height of leds, convert to relative radius
+        size = self.size * (bounds[1][1] - bounds[1][0])
+        # Speed is in letter heights per second, convert to length per step
+        speed = size * self.speed / self.preferred_fps
+        self.currx = bounds[0][1]
+        self.endx = bounds[0][0]
+        self.liney = -size / 2.0
+        self.shapes = []
+        for ind, ch in enumerate(self.txt):
+            if isinstance(self.textcolor, list):
+                col = self.textcolor[ind % len(self.textcolor)]
+            elif callable(self.textcolor):
+                col = self.textcolor(ind)
+            else:
+                col = self.textcolor
+            sh = Letter(ch, (0, self.liney), 0, size, col)
+            sh.lw = self.lw
+            sh.off[0] = -self.currx + (sh.extent[0] - sh.lw * 0.5) * size
+            sh.set_speed(-speed, 0.0)
+            wdt = max(0.4, sh.extent[2] - sh.extent[0] + 2 * sh.lw)
+            self.currx += wdt * size
+            self.add_shape(sh)
+        self.nsteps = int(round((self.currx - self.endx) / speed + 0.5))
+        self.time = 0
+
+    def reset(self, numframes):
+        if self.time != 0:
+            self.place_text()
+
+    def update(self, step):
+        for sh in self.shapes:
+            sh.update(step)
+        self.time += step
+
+
 class CaleidoScene(MovingShapesScene):
     def __init__(self, ctr, sym):
         super(CaleidoScene, self).__init__(ctr)
@@ -766,15 +861,22 @@ class CaleidoScene(MovingShapesScene):
 
 
 class BouncingScene(MovingShapesScene):
-    def __init__(self, ctr, num):
+    def __init__(self, ctr, num, speed=0.25, size=0.3, colorfunc=False):
         super(BouncingScene, self).__init__(ctr)
+        self.bounds = ctr.get_layout_bounds()
+        self.size = size
+        self.speed = speed
+        self.colfunc = colorfunc or random_hsl_color_func(light=0.0)
         for i in range(num):
-            self.create()
+            self.ind = i
+            self.add_shape(self.create())
 
     def create(self):
-        cent = (gauss(0.0, 0.2), gauss(0.0, 0.2))
-        shape = Blob(cent, 0.12, random_hsl_color_func(light=0.0)())
-        shape.speed = (gauss(0.0, 0.1), gauss(0.0, 0.1))
+        cent = tuple(uniform(*self.bounds["bounds"][d]) for d in range(self.bounds["dim"]))
+        vec = tuple(gauss(0.0, 0.1) for d in range(self.bounds["dim"]))
+        vlen = self.dot(vec, vec) ** 0.5
+        shape = Blob(cent, self.size/2.0, self.colfunc(self.ind))
+        shape.speed = tuple(ele/vlen * self.speed/self.preferred_fps for ele in vec)
         return shape
 
     def dot(self, v1, v2):
@@ -786,13 +888,33 @@ class BouncingScene(MovingShapesScene):
     def add(self, v1, v2):
         return tuple(map(lambda x1, x2: x1 + x2, v1, v2))
 
+    def bounces(self, sh):
+        rad = self.dot(sh.cent, sh.cent)
+        dir = self.dot(sh.cent, sh.speed)
+        if rad > 1.0 and dir > 0.0:
+            return True
+        for d in range(self.bounds["dim"]):
+            c = sh.cent[d] * self.bounds["radius"] + self.bounds["center"][d]
+            if ((c < self.bounds["bounds"][d][0] and sh.speed[d] < 0.0) or
+                (c > self.bounds["bounds"][d][1] and sh.speed[d] > 0.0)):
+                return True
+        if self.bounds["dim"] == 3:
+            vec = (sh.cent[0], sh.cent[2])
+            sp = (sh.speed[0], sh.speed[2])
+            rad = self.dot(vec, vec) ** 0.5
+            dir = self.dot(vec, sp)
+            if rad * self.bounds["radius"] > self.bounds["cylradius"] and dir > 0.0:
+                return True
+        return False
+
     def update(self, step):
-        # om utanför, vänd håll med slumpbrus
         for sh in self.shapes:
-            if self.dot(sh.cent, sh.cent) > 1.0 and self.dot(sh.cent, sh.speed) > 0.0:
-                delta = self.dot(sh.cent, sh.speed) / self.dot(sh.cent, sh.cent)
-                sh.speed = self.add(sh.speed, self.scale(sh.cent, -2 * delta))
-        super(BouncingScene, self).update(step)
+            if self.bounces(sh):
+                vec = tuple(c + gauss(0.0, 0.1) for c in sh.cent)
+                vlen2 = self.dot(vec, vec)
+                delta = self.dot(vec, sh.speed) / vlen2
+                sh.speed = self.add(sh.speed, self.scale(vec, -2 * delta))
+            sh.update(step)
 
 
 # ---------------------------------------------------------

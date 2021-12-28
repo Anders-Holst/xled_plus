@@ -113,7 +113,7 @@ class FlowerScene(MovingShapesScene):
 
 if __name__ == '__main__':
     ctr = setup_control()
-    ctr.adjust_layout_aspect(1.4)  # How many times wider than high is the led installation?
+    ctr.adjust_layout_aspect(1.0)  # How many times wider than high is the led installation?
     eff = FlowerScene(ctr, 6)
     oldmode = ctr.get_mode()["mode"]
     eff.launch_rt()
