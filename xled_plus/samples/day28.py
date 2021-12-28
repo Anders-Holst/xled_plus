@@ -16,8 +16,8 @@ class FlowerScene(MovingShapesScene):
         self.symang = m.pi / sym
         self.bgcol = hsl_color(0.25, 1.0, -0.5)
         self.lasthue = 0.25
-        self.horizon = 250
-        self.preferred_frames = 600
+        self.horizon = 360
+        self.preferred_frames = 720
         self.proj2D3D = "halfsphere"
         self.ind = 0
 
@@ -28,7 +28,7 @@ class FlowerScene(MovingShapesScene):
         self.lasthue = hue
         sat = random()*0.5 + 0.5
         aa = 0.2
-        ss = 0.08 / self.preferred_fps
+        ss = 0.05 / self.preferred_fps
         def func(pos, ind):
             tm = self.time - sh.crtime
             if tm * ss < aa:
@@ -43,7 +43,7 @@ class FlowerScene(MovingShapesScene):
     def reshapefunc(self, sh):
         fact = (random() - 0.4) * 0.7
         aa = 0.2
-        ss = 0.08 / self.preferred_fps
+        ss = 0.05 / self.preferred_fps
         def func():
             tm = self.time - sh.crtime
             if tm * ss < aa:
@@ -70,7 +70,7 @@ class FlowerScene(MovingShapesScene):
         return shape
 
     def update(self, step):
-        if self.time % 25 == 0:
+        if self.time % 30 == 0:
             if self.record:
                 sh = self.create()
                 self.add_shape(sh)
@@ -86,7 +86,7 @@ class FlowerScene(MovingShapesScene):
                 self.add_shape(self.create())
         for sh in self.shapes:
             sh.reshape()
-        if len(self.shapes) > 10:
+        if len(self.shapes) > 12:
             self.shapes = self.shapes[:-1]
         self.time += 1
         # super(FlowerScene, self).update(step)
@@ -113,7 +113,7 @@ class FlowerScene(MovingShapesScene):
 
 if __name__ == '__main__':
     ctr = setup_control()
-    ctr.adjust_layout_aspect(1.0)  # How many times wider than high is the led installation?
+    ctr.adjust_layout_aspect(1.4)  # How many times wider than high is the led installation?
     eff = FlowerScene(ctr, 6)
     oldmode = ctr.get_mode()["mode"]
     eff.launch_rt()
