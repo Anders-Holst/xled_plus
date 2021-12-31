@@ -26,14 +26,33 @@ from xled.control import ControlInterface
 from xled_plus.highcontrol import HighControlInterface
 
 
+def pick_master_and_slaves(hostlst):
+    ctrlst = [ControlInterface(ip) for ip in hostlst]
+    master = False
+    slaves = []
+    for ctr in ctrlst:
+        sync = ctr.get_led_movie_config()['sync']
+        if sync['mode'] == 'master':
+            assert not master, "Only one master device allowed in the group"
+            master = ctr
+        elif sync['mode'] == 'slave':
+            slaves.append(ctr)
+        else:
+            assert len(hostlst) == 1, "One device does not belong to the group"
+            master = ctr
+    assert master, "No master device in the group"
+    return master, slaves
+
+
 class MultiHighControlInterface(HighControlInterface):
     """
-    High level interface to control specific device
+    High level interface to control a group of joined devices in sync
     """
 
     def __init__(self, hostlst):
-        super(MultiHighControlInterface, self).__init__(hostlst[0])
-        self.ctrlst = [self] + [ControlInterface(ip) for ip in hostlst[1:]]
+        master, slaves = pick_master_and_slaves(hostlst)
+        super(MultiHighControlInterface, self).__init__(master.host)
+        self.ctrlst = slaves
         info = self.get_device_info()
         self.family = info["fw_family"] if "fw_family" in info else "D"
         self.led_bytes = info["bytes_per_led"] if "bytes_per_led" in info else 3

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 """
-xled++.highcontrol
-~~~~~~~~~~~~~
+xled_plus.highcontrol
+~~~~~~~~~~~~~~~~~~~~~
 
-This module contains interface to control specific device
+High level control interface to the Twinkly led lights.
 
 """
 
@@ -194,17 +194,20 @@ class HighControlInterface(ControlInterface):
         Turns on the device.
 
         Sets the mode to the last used mode before turn_off().
-        If the last mode is not known, sets 'movie' mode if there is an
-        uploaded movie, else 'effect' mode.
+        If the last mode is not known, sets 'playlist' mode if there is a
+        playlist, otherwise 'movie' mode if there is any uploaded movie,
+        else 'effect' mode.
         """
         if self.last_mode:
             return self.set_mode(self.last_mode)
         else:
             if self.family == "D" or self.version < (2, 5, 6):
-                response = self.get_led_movie_config()["frames_number"]
+                mlst = self.get_led_movie_config()["frames_number"]
+                return self.set_mode("effect" if not mlst else "movie")
             else:
-                response = self.get_movies()["movies"]
-            return self.set_mode("effect" if not response else "movie")
+                mlst = self.get_movies()["movies"]
+                plst = self.get_playlist()["entries"]
+                return self.set_mode("effect" if not mlst else "playlist" if plst else "movie")
 
     def turn_off(self):
         """
@@ -605,7 +608,7 @@ class HighControlInterface(ControlInterface):
         return pat
 
     def fetch_layout(self, aspect=False):
-        if self.version > (2, 2, 1):
+        if self.family != 'D' and self.version > (2, 2, 1):
             res = self.get_led_layout()
             if res["source"] == "3d":
                 if aspect:
