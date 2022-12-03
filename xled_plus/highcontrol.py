@@ -39,6 +39,13 @@ def seconds_after_midnight_from_string(timestr, form):
     return dt.hour * 3600 + dt.minute * 60 + dt.second
 
 
+def date_from_seconds_after_midnight(seconds):
+    now = datetime.datetime.now()
+    then = (now.replace(hour=0, minute=0, second=0, microsecond=0) +
+            datetime.timedelta(seconds=seconds))
+    return then
+
+
 class HighControlInterface(ControlInterface):
     """
     High level interface to control specific device
@@ -51,6 +58,7 @@ class HighControlInterface(ControlInterface):
         self.family = info["fw_family"] if "fw_family" in info else "D"
         self.led_bytes = info["bytes_per_led"] if "bytes_per_led" in info else 3
         self.led_profile = info["led_profile"] if "led_profile" in info else "RGB"
+        self.max_movies = info["max_movies"] if "max_movies" in info else 15
         self.version = tuple(map(int, self.firmware_version()["version"].split(".")))
         self.string_config = self.get_led_config()["strings"]
         if not self.hw_address:
@@ -244,48 +252,56 @@ class HighControlInterface(ControlInterface):
 
     # Functions for selecting what to show
 
-    def show_movie(self, movie_or_id, fps=None):
+    def show_movie(self, movie_or_id, fps=None, name=""):
         """
-        Either starts playing an already uploaded movie with the provided id,
-        or uploads a new movie and starts playing it at the provided frames-per-second.
+        Either starts playing an already uploaded movie with the provided id or name,
+        or uploads a new movie and starts playing it at the provided frames-per-second,
+        giving it the optional provided name.
         Note: if the movie do not fit in the remaining capacity, the old movie list is cleared.
         Switches to movie mode if necessary.
         The movie is an object suitable created with to_movie or make_func_movie.
 
         :param movie_or_id: either an integer id or a file-like object that points to movie
         :param fps: frames per second, or None if a movie id is given
+        :param str name: name of uploaded movie
         """
-        if self.family == "D" or self.version < (2, 5, 6):
-            if isinstance(movie_or_id, int) and fps is None:
+        if isinstance(movie_or_id, int) and fps is None:
+            if self.family == "D" or self.version < (2, 5, 6):
                 if movie_or_id != 0:
                     return False
             else:
-                assert fps
-                movie = movie_or_id
-                numframes = movie.seek(0, 2) // (self.led_bytes * self.num_leds)
-                movie.seek(0)
-                self.set_led_movie_config(1000 // max(1, fps), numframes, self.num_leds)
-                self.set_led_movie_full(movie)
-        else:
-            if isinstance(movie_or_id, int) and fps is None:
                 movies = self.get_movies()["movies"]
                 if movie_or_id in [entry["id"] for entry in movies]:
                     self.set_movies_current(movie_or_id)
                 else:
                     return False
+        elif isinstance(movie_or_id, str) and fps is None:
+            if self.family == "D" or self.version < (2, 5, 6):
+                return False
             else:
-                assert fps
-                movie = movie_or_id
-                numframes = movie.seek(0, 2) // (self.led_bytes * self.num_leds)
-                movie.seek(0)
+                movies = self.get_movies()["movies"]
+                matches = [entry["id"] for entry in movies if entry["name"]==movie_or_id]
+                if matches:
+                    self.set_movies_current(matches[0])
+                else:
+                    return False
+        else:
+            assert fps
+            movie = movie_or_id
+            numframes = movie.seek(0, 2) // (self.led_bytes * self.num_leds)
+            movie.seek(0)
+            if self.family == "D" or self.version < (2, 5, 6):
+                self.set_led_movie_config(1000 // max(1, fps), numframes, self.num_leds)
+                self.set_led_movie_full(movie)
+            else:
                 res = self.get_movies()
                 capacity = res["available_frames"] - 1
-                if numframes > capacity or len(res["movies"]) > 15:
+                if numframes > capacity or len(res["movies"]) > self.max_movies:
                     if self.curr_mode == "movie" or self.curr_mode == "playlist":
                         self.set_mode("off")
                     self.delete_movies()
                 self.set_movies_new(
-                    "",
+                    name,
                     str(uuid.uuid4()),
                     self.led_profile.lower() + "_raw",
                     self.num_leds,
@@ -297,9 +313,9 @@ class HighControlInterface(ControlInterface):
             self.set_mode("movie")
         return True
 
-    def upload_movie(self, movie, fps, force=False):
+    def upload_movie(self, movie, fps, name, force=False):
         """
-        Uploads a new movie with the provided frames-per-second.
+        Uploads a new movie with the provided frames-per-second and name.
         Note: if the movie does not fit in the remaining capacity, and force is
         not set to True, the function just returns False, in which case the user
         can try clear_movies first.
@@ -311,6 +327,7 @@ class HighControlInterface(ControlInterface):
         :param movie: a file-like object that points to movie
         :param fps: frames per second, or None if a movie id is given
         :param bool force: if remaining capacity is too low, previous movies will be removed
+        :param str name: name of uploaded movie
         :rtype: int
         """
         numframes = movie.seek(0, 2) // (self.led_bytes * self.num_leds)
@@ -322,7 +339,7 @@ class HighControlInterface(ControlInterface):
         else:
             res = self.get_movies()
             capacity = res["available_frames"] - 1
-            if numframes > capacity or len(res["movies"]) > 15:
+            if numframes > capacity or len(res["movies"]) > self.max_movies:
                 if force:
                     if self.curr_mode == "movie" or self.curr_mode == "playlist":
                         self.set_mode("effect")
@@ -332,7 +349,7 @@ class HighControlInterface(ControlInterface):
             if self.curr_mode == "movie":
                 oldid = self.get_movies_current()["id"]
             res = self.set_movies_new(
-                "",
+                name,
                 str(uuid.uuid4()),
                 self.led_profile.lower() + "_raw",
                 self.num_leds,

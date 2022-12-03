@@ -52,14 +52,14 @@ class MultiHighControlInterface(HighControlInterface):
     def __init__(self, hostlst):
         master, slaves = pick_master_and_slaves(hostlst)
         super(MultiHighControlInterface, self).__init__(master.host)
-        self.ctrlst = slaves
+        self.ctrlst = [master] + slaves
         info = self.get_device_info()
         self.family = info["fw_family"] if "fw_family" in info else "D"
         self.led_bytes = info["bytes_per_led"] if "bytes_per_led" in info else 3
         self.led_profile = info["led_profile"] if "led_profile" in info else "RGB"
         self.version = tuple(map(int, self.firmware_version()["version"].split(".")))
         self.nledslst = [ctr.get_device_info()["number_of_led"] for ctr in self.ctrlst]
-        for ctr in self.ctrlst:
+        for ctr in slaves:
             ctr._udpclient = self.udpclient
         self.num_leds = sum(self.nledslst)
         self.string_config = [{'first_led_id': 0, 'length': self.num_leds}]
@@ -83,16 +83,18 @@ class MultiHighControlInterface(HighControlInterface):
             mov.seek(0)
         return lst
 
-    def show_movie(self, movie_or_id, fps=None):
+    def show_movie(self, movie_or_id, fps=None, name=""):
         """
-        Either starts playing an already uploaded movie with the provided id,
-        or uploads a new movie and starts playing it at the provided frames-per-second.
+        Either starts playing an already uploaded movie with the provided id or name,
+        or uploads a new movie and starts playing it at the provided frames-per-second,
+        giving it the optional provided name.
         Note: if the movie do not fit in the remaining capacity, the old movie list is cleared.
         Switches to movie mode if necessary.
         The movie is an object suitable created with to_movie or make_func_movie.
 
         :param movie_or_id: either an integer id or a file-like object that points to movie
         :param fps: frames per second, or None if a movie id is given
+        :param str name: name of uploaded movie
         """
         if isinstance(movie_or_id, int) and fps is None:
             if self.family == "D" or self.version < (2, 5, 6):
@@ -106,16 +108,28 @@ class MultiHighControlInterface(HighControlInterface):
                     return False
             if self.curr_mode != "movie":
                 self.set_mode("movie")
+        elif isinstance(movie_or_id, str) and fps is None:
+            if self.family == "D" or self.version < (2, 5, 6):
+                return False
+            else:
+                movies = self.get_movies()["movies"]
+                matches = [entry["id"] for entry in movies if entry["name"]==movie_or_id]
+                if matches:
+                    self.set_movies_current(matches[0])
+                else:
+                    return False
+            if self.curr_mode != "movie":
+                self.set_mode("movie")
         else:
             assert fps
             self.set_mode("off")
-            self.upload_movie(movie_or_id, fps, force=True)
+            self.upload_movie(movie_or_id, fps, name, force=True)
             self.set_mode("movie")
         return True
 
-    def upload_movie(self, movie, fps, force=False):
+    def upload_movie(self, movie, fps, name, force=False):
         """
-        Uploads a new movie with the provided frames-per-second.
+        Uploads a new movie with the provided frames-per-second and name.
         Note: if the movie does not fit in the remaining capacity, and force is
         not set to True, the function just returns False, in which case the user
         can try clear_movies first.
@@ -127,6 +141,7 @@ class MultiHighControlInterface(HighControlInterface):
         :param movie: a file-like object that points to movie
         :param fps: frames per second, or None if a movie id is given
         :param bool force: if remaining capacity is too low, previous movies will be removed
+        :param str name: name of uploaded movie
         :rtype: int
         """
         numframes = movie.seek(0, 2) // (self.led_bytes * self.num_leds)
@@ -148,10 +163,11 @@ class MultiHighControlInterface(HighControlInterface):
                     return False
             if self.curr_mode == "movie":
                 oldid = self.get_movies_current()["id"]
+            uid = str(uuid.uuid4())
             for ctr, mov, nled in zip(self.ctrlst, movielst, self.nledslst):
                 res = ctr.set_movies_new(
-                    "",
-                    str(uuid.uuid4()),
+                    name,
+                    uid,
                     self.led_profile.lower() + "_raw",
                     nled,
                     numframes,
@@ -174,8 +190,7 @@ class MultiHighControlInterface(HighControlInterface):
             frame = self.to_movie(frame)
         framelst = self.split_movie(frame)
         if self.curr_mode != "rt" or self.last_rt_time + 50.0 < time.time():
-            for ctr in self.ctrlst:
-                ctr.set_mode("rt")
+            self.set_mode("rt")
         else:
             self.last_rt_time = time.time()
         for ctr, mov, nled in zip(self.ctrlst, framelst, self.nledslst):
@@ -187,6 +202,18 @@ class MultiHighControlInterface(HighControlInterface):
             else:
                 ctr.set_rt_frame_socket(mov, 3)
         self.udpclient.destination_host = self.host
+
+    #def show_playlist(self, lst_or_id, duration):
+    #    for ctr in self.ctrlst:
+    #        ctr.show_playlist(list_or_id, duration)
+
+    #def show_color(self, rgb):
+    #    for ctr in self.ctrlst:
+    #        ctr.show_color(rgb)
+
+    #def set_mode(self, mode):
+    #    for ctr in self.ctrlst:
+    #        ctr.set_mode(mode)
 
     def clear_movies(self):
         """
