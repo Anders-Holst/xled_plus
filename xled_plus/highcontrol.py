@@ -65,9 +65,12 @@ class HighControlInterface(ControlInterface):
             self.hw_address = info["mac"]
         self.layout = False
         self.layout_bounds = False
-        self.last_mode = None
         self.last_rt_time = 0
         self.curr_mode = self.get_mode()["mode"]
+        if self.curr_mode != "off" and self.curr_mode != "rt":
+            self.last_mode = self.curr_mode
+        else:
+            self.last_mode = None
 
     def firmware_num_stages(self):
         if self.family == "D":

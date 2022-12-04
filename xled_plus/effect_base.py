@@ -82,7 +82,8 @@ class Effect(object):
         if effect_timer:
             effect_timer.cancel()
         effect_timer = None
-        self.ctr.set_mode(self.ctr.last_mode)
+        if self.ctr.last_mode:
+            self.ctr.set_mode(self.ctr.last_mode)
 
     def make_movie(self, numframes):
         frames = []
