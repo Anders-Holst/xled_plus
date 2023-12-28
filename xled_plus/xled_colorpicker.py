@@ -36,10 +36,8 @@ class XledColorPicker:
     def on_click(self, hsl, event):
         if hsl:
             if not self.noset:
-                pat = self.ctr.make_solid_pattern(hsl_color(*hsl))
-                id = self.ctr.upload_movie(self.ctr.to_movie(pat), 1, force=True)
-                self.ctr.set_movies_current(id)
-                self.outermode = 'movie'
+                self.ctr.show_color(hsl_color(*hsl))
+                self.outermode = self.ctr.curr_mode
             if self.printrgb and self.printhsl:
                 args = hsl + (hsl_color(*hsl), )
                 print("HSL: ({:.4f}, {:.4f}, {:.4f})  RGB: {}".format(*args))

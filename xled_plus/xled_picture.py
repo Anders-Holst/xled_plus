@@ -55,7 +55,7 @@ class PictureEffect(Effect):
             self.xscale = xdiff * fact
             self.yscale = fact
         if "is_animated" in dir(self.im) and self.im.is_animated:
-            self.preferred_fps = 100.0 / self.im.info["duration"]
+            self.preferred_fps = 1000.0 / self.im.info["duration"]
             self.preferred_frames = self.im.n_frames
         else:
             self.preferred_fps = 1

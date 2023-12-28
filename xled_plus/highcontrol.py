@@ -22,7 +22,7 @@ import math as m
 from operator import xor
 
 from xled.control import ControlInterface
-from xled.util import date_from_seconds_after_midnight
+from xled.util import date_from_seconds_after_midnight, seconds_after_midnight
 from xled.security import sha1sum
 from xled.exceptions import HighInterfaceError
 
@@ -198,7 +198,31 @@ class HighControlInterface(ControlInterface):
                 timestr_off, SHORT_TIME_FORMAT
             )
 
-        return self.set_timer(time_on, time_off)
+        if self.version < (2, 8, 0):
+            return self.set_timer(time_on, time_off)
+        else:
+            # Current time does not seem to update any more, so we need to adapt
+            # the provided times to the device time
+            devicetime = self.get_timer()["time_now"]
+            localtime = seconds_after_midnight()
+            time_on = (time_on + devicetime - localtime) % 86400
+            time_off = (time_off + devicetime - localtime) % 86400
+            return self.set_timer(time_on, time_off, devicetime)
+
+    def set_network_mode_station(self, ssid=None, password=None):
+        """
+        Sets network mode to Station.
+
+        The first time you need to provide an ssid and password for
+        the WIFI to connect to.
+
+        :param str ssid: SSID of the access point to connect to
+        :param str password: password to use
+        """
+        if self.version < (2, 4, 30):
+            super(HighControlInterface, self).set_network_mode_station(ssid,passwd)
+        else:
+            super(HighControlInterface, self).set_network_mode_station_v2(ssid,passwd)
 
     def turn_on(self):
         """
@@ -229,7 +253,7 @@ class HighControlInterface(ControlInterface):
         mode = self.get_mode()["mode"]
         if mode != "off" and mode != "rt":
             self.last_mode = mode
-        return self.set_mode("off")
+        self.set_mode("off")
 
     def is_on(self):
         """

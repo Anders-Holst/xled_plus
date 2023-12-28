@@ -53,21 +53,13 @@ class MultiHighControlInterface(HighControlInterface):
         master, slaves = pick_master_and_slaves(hostlst)
         super(MultiHighControlInterface, self).__init__(master.host)
         self.ctrlst = [master] + slaves
-        info = self.get_device_info()
-        self.family = info["fw_family"] if "fw_family" in info else "D"
-        self.led_bytes = info["bytes_per_led"] if "bytes_per_led" in info else 3
-        self.led_profile = info["led_profile"] if "led_profile" in info else "RGB"
-        self.version = tuple(map(int, self.firmware_version()["version"].split(".")))
-        self.nledslst = [ctr.get_device_info()["number_of_led"] for ctr in self.ctrlst]
-        for ctr in slaves:
-            ctr._udpclient = self.udpclient
+        infolst = [ctr.get_device_info().data for ctr in self.ctrlst]
+        self.nledslst = [info["number_of_led"] for info in infolst]
         self.num_leds = sum(self.nledslst)
         self.string_config = [{'first_led_id': 0, 'length': self.num_leds}]
-        self.layout = False
-        self.layout_bounds = False
-        self.last_mode = None
-        self.last_rt_time = 0
-        self.curr_mode = self.get_mode()["mode"]
+        self.max_movies = min([info["max_movies"] if "max_movies" in info else 15 for info in infolst]
+        for ctr in slaves:
+            ctr._udpclient = self.udpclient
 
     def split_movie(self, movie):
         # return a list of one movie per connected device
@@ -154,7 +146,7 @@ class MultiHighControlInterface(HighControlInterface):
         else:
             res = self.get_movies()
             capacity = res["available_frames"] - 1
-            if numframes > capacity or len(res["movies"]) > 15:
+            if numframes > capacity or len(res["movies"]) > self.max_movies:
                 if force:
                     if self.curr_mode == "movie" or self.curr_mode == "playlist":
                         self.set_mode("effect")
