@@ -31,7 +31,7 @@ def _run_setup():
         author='Anders Holst',
         author_email='anders.holst@ri.se',
         url='https://github.com/Anders-Holst/xled_plus',
-        packages=['xled_plus','xled_plus.samples'],
+        packages=['xled_plus', 'xled_plus.samples'],
         description='Addons to the XLED package for controling Twinkly LED lights',
         long_description=readme,
         license='MIT',
