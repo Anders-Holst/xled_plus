@@ -57,7 +57,7 @@ class MultiHighControlInterface(HighControlInterface):
         self.nledslst = [info["number_of_led"] for info in infolst]
         self.num_leds = sum(self.nledslst)
         self.string_config = [{'first_led_id': 0, 'length': self.num_leds}]
-        self.max_movies = min([info["max_movies"] if "max_movies" in info else 15 for info in infolst]
+        self.max_movies = min([info["max_movies"] if "max_movies" in info else 15 for info in infolst])
         for ctr in slaves:
             ctr._udpclient = self.udpclient
 
