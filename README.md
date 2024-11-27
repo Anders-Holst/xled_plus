@@ -45,19 +45,18 @@ repository on GitHub, where the "Daily effects" thread contains
 comments on the samples and gives some hints on how the effects can be
 modified.
 
-6. You can also try the interactive, 3D, color picker:
-You need first to download the "colorsphere" package
+6. You can also try the interactive GUI for creating dynamic color
+effects, based on the 3D color picker:
+
+You need first to download the latest version of the "colorsphere" package:
 ```
-pip install colorsphere
+pip install -U colorsphere
 ```
 Then you can start it with
 ```
-python -m xled_plus.xled_colorpicker
+python -m xled_plus.xled_colorcontrol
 ```
 which should bring up a window on your computer with a spherical color
-body. Hovering with the mouse over it will display the color on the
-lights. Grab and drag the surface to rotate the sphere. Click on it to
-upload the color to your lights.
-
-
+body in the middle, where you can select your own color scheme, and then
+use it in one of several included effect types, and upload it to your leds.
 
