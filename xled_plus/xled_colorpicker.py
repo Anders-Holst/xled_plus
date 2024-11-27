@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 """
 xled_plus.xled_colorpicker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -11,7 +13,7 @@ to watch colors. Click on a color to upload it to the leds as a movie.
 Drag the surface of the sphere to rotate it.
 
 When started from the shell, eg with 'python -m xled_plus.xled_colorpicker'
-it will look on the netowork for any connected leds. If you know the
+it will look on the network for any connected leds. If you know the
 ip-address of your leds, you can provide it as an extra argument and it
 will not have to search for it.
 """
@@ -82,7 +84,7 @@ class XledColorPicker:
         if from_shell:
             self.cp.win.add_close_callback(self.exit_event_loop)
             self.cp.win.fig.canvas.start_event_loop(0)
-
+            # self.cp.win.start_event_loop()
 
 if __name__ == '__main__':
 

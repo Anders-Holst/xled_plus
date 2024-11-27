@@ -186,7 +186,7 @@ class Aurora(GlowEffect):
         super(Aurora, self).__init__(ctr, cols, 2, [6, 10])
 
 
-class Brown(GlowEffect):
+class Browns(GlowEffect):
     def __init__(self, ctr):
         cols = [
             (0.5, 0.0, -1.0),
@@ -196,7 +196,20 @@ class Brown(GlowEffect):
             (0.45, 1.0, -0.765),
             (0.52, 1.0, -0.76),
         ]
-        super(Brown, self).__init__(ctr, cols, 3, [6, 10])
+        super(Browns, self).__init__(ctr, cols, 3, [6, 10])
+
+
+class Purples(GlowEffect):
+    def __init__(self, ctr):
+        cols = [
+            (0.8742, 1.0000, -0.6994),
+            (0.8529, 1.0000, -0.9217),
+            (0.8593, 1.0000, 0.1446),
+            (0.9993, 1.0000, -0.5598),
+            (0.0728, 1.0000, -0.3609),
+            (0.0871, 1.0000, 0.1166),
+        ]
+        super(Purles, self).__init__(ctr, cols, 3, [6, 10])
 
 
 class GlowCP(GlowEffect):
