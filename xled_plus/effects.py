@@ -209,7 +209,7 @@ class Purples(GlowEffect):
             (0.0728, 1.0000, -0.3609),
             (0.0871, 1.0000, 0.1166),
         ]
-        super(Purles, self).__init__(ctr, cols, 3, [6, 10])
+        super(Purples, self).__init__(ctr, cols, 3, [6, 10])
 
 
 class GlowCP(GlowEffect):
