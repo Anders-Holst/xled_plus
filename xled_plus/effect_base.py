@@ -53,8 +53,9 @@ effect_timer = None
 
 
 class Effect(object):
-    def __init__(self, ctr):
+    def __init__(self, ctr, name=""):
         self.ctr = ctr
+        self.effect_name = name
         self.preferred_frames = 120
         self.preferred_fps = 8
 
@@ -94,7 +95,7 @@ class Effect(object):
 
     def launch_movie(self):
         self.stop_rt()
-        self.ctr.show_movie(self.make_movie(self.preferred_frames), self.preferred_fps)
+        self.ctr.show_movie(self.make_movie(self.preferred_frames), self.preferred_fps, self.effect_name)
 
     def save_movie(self, name):
         self.ctr.save_movie(

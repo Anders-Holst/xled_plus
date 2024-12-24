@@ -72,8 +72,8 @@ class Glowbit:
 
 
 class GlowEffect(Effect):
-    def __init__(self, ctr, cols, bend, cycles, fps=False):
-        super(GlowEffect, self).__init__(ctr)
+    def __init__(self, ctr, cols, bend, cycles, fps=False, name=""):
+        super(GlowEffect, self).__init__(ctr, name)
         if fps:
             self.preferred_fps = fps
         self.cols = cols
@@ -120,7 +120,7 @@ class Charcoal(GlowEffect):
             [0.5606, 1.0, -0.6080],
             [0.5956, 1.0, -0.4838],
         ]
-        super(Charcoal, self).__init__(ctr, cols, 2, [2, 4], 8)
+        super(Charcoal, self).__init__(ctr, cols, 2, [2, 4], 8, name="Charcoal")
 
 
 class Fire(GlowEffect):
@@ -135,7 +135,7 @@ class Fire(GlowEffect):
             [0.5603, 1.0, -0.0170],
             [0.45, 1.0, 0.1],
         ]
-        super(Fire, self).__init__(ctr, cols, 2, [3, 6], 20)
+        super(Fire, self).__init__(ctr, cols, 2, [3, 6], 20, name="Fire")
 
 
 class Water(GlowEffect):
@@ -150,7 +150,7 @@ class Water(GlowEffect):
             [0.15, 1.0, 0.0],
             [0.0, 1.0, 0.8],
         ]
-        super(Water, self).__init__(ctr, cols, 2, [3, 6], 20)
+        super(Water, self).__init__(ctr, cols, 2, [3, 6], 20, name="Water")
 
 
 class Meadow(GlowEffect):
@@ -166,7 +166,7 @@ class Meadow(GlowEffect):
             [0.7709, 1.0, -0.3420],
             [0.7833, 0.1259, 0.1001],
         ]
-        super(Meadow, self).__init__(ctr, cols, 2, [4, 8])
+        super(Meadow, self).__init__(ctr, cols, 2, [4, 8], name="Meadow")
 
 
 class Aurora(GlowEffect):
@@ -183,7 +183,7 @@ class Aurora(GlowEffect):
             [0.1928, 1.0, -0.1506],
             [0.1, 1.0, 0.9],
         ]
-        super(Aurora, self).__init__(ctr, cols, 2, [6, 10])
+        super(Aurora, self).__init__(ctr, cols, 2, [6, 10], name="Aurora")
 
 
 class Browns(GlowEffect):
@@ -196,7 +196,7 @@ class Browns(GlowEffect):
             (0.45, 1.0, -0.765),
             (0.52, 1.0, -0.76),
         ]
-        super(Browns, self).__init__(ctr, cols, 3, [6, 10])
+        super(Browns, self).__init__(ctr, cols, 3, [6, 10], name="Browns")
 
 
 class Purples(GlowEffect):
@@ -209,12 +209,12 @@ class Purples(GlowEffect):
             (0.0728, 1.0000, -0.3609),
             (0.0871, 1.0000, 0.1166),
         ]
-        super(Purples, self).__init__(ctr, cols, 3, [6, 10])
+        super(Purples, self).__init__(ctr, cols, 3, [6, 10], name="Purples")
 
 
 class GlowCP(GlowEffect):
-    def __init__(self, ctr, cols):
-        super(GlowCP, self).__init__(ctr, cols, 3, [4, 8])
+    def __init__(self, ctr, cols, name="Glow"):
+        super(GlowCP, self).__init__(ctr, cols, 3, [4, 8], name=name)
 
 
 """
@@ -227,8 +227,8 @@ varied color temperature of whites, unlike the origonal.
 
 
 class SparkleEffect(Effect):
-    def __init__(self, ctr, freq, nfunc, sfunc, icol=(0, 0, 0)):
-        super(SparkleEffect, self).__init__(ctr)
+    def __init__(self, ctr, freq, nfunc, sfunc, icol=(0, 0, 0), name=""):
+        super(SparkleEffect, self).__init__(ctr, name)
         self.freq = freq
         self.newfunc = nfunc
         self.stepfunc = sfunc
@@ -427,7 +427,7 @@ def looplight_func(up, down, sprop_up=1.0, sprop_down=0.0, lin=False):
 class SimpleBlink(SparkleEffect):
     def __init__(self, ctr):
         super(SimpleBlink, self).__init__(
-            ctr, 8, random_color_func(sat=1.0, light=0.0), pulselight_func(0, 1, 0)
+            ctr, 8, random_color_func(sat=1.0, light=0.0), pulselight_func(0, 1, 0), name="SimpleBlink"
         )
 
 
@@ -435,14 +435,14 @@ class SimpleStars(SparkleEffect):
     def __init__(self, ctr):
         white = hsl_color(0.0, 0.0, 1.0)
         super(SimpleStars, self).__init__(
-            ctr, 8, lambda *args: white, pulselight_func(0, 1, 0)
+            ctr, 8, lambda *args: white, pulselight_func(0, 1, 0), name="SimpleStars"
         )
 
 
 class Pulselight(SparkleEffect):
     def __init__(self, ctr):
         super(Pulselight, self).__init__(
-            ctr, 3, random_color_func(light=0.0), pulselight_func(18, 4, 18)
+            ctr, 3, random_color_func(light=0.0), pulselight_func(18, 4, 18), name="Pulselight"
         )
         self.preferred_fps = 12
 
@@ -453,21 +453,21 @@ class Looplight(SparkleEffect):
             sfunc = looplight_func(8, 16, sprop_up=0.0, sprop_down=1.0)
         else:
             sfunc = looplight_func(16, 8)
-        super(Looplight, self).__init__(ctr, 4, random_hs_func(sat=[0.5, 1.0]), sfunc)
+        super(Looplight, self).__init__(ctr, 4, random_hs_func(sat=[0.5, 1.0]), sfunc, name="Looplight")
 
 
 class LooplightSpectrum(SparkleEffect):
     def __init__(self, ctr, cycle=240):
         super(LooplightSpectrum, self).__init__(
-            ctr, 4, circular_hs_func(cycle), looplight_func(16, 8)
+            ctr, 4, circular_hs_func(cycle), looplight_func(16, 8), name="LooplightSpectrum"
         )
         self.preferred_frames = cycle
 
 
-class SparkleRandom(SparkleEffect):
+class PulsateRandom(SparkleEffect):
     def __init__(self, ctr, hue=False, sat=False, light=False):
         super(SparkleRandom, self).__init__(
-            ctr, 3, random_color_func(hue, sat, light), pulselight_func(16, 8, 16)
+            ctr, 3, random_color_func(hue, sat, light), pulselight_func(16, 8, 16), name="PulsateRandom"
         )
         self.preferred_fps = 12
 
@@ -475,16 +475,31 @@ class SparkleRandom(SparkleEffect):
 class SparkleStars(SparkleEffect):
     def __init__(self, ctr):
         super(SparkleStars, self).__init__(
-            ctr, 3, tinted_white_func(0.0, 0.5, 0.5, 0.5), pulselight_func(16, 8, 16)
+            ctr, 3, tinted_white_func(0.0, 0.5, 0.5, 0.5), pulselight_func(16, 8, 16), name="SparkleStars"
         )
         self.preferred_fps = 12
 
 
+class TwinkleCP(SparkleEffect):
+    def __init__(self, ctr, cols, name="Twinkle"):
+        super(TwinkleCP, self).__init__(
+            ctr, 4, selected_color_func(cols), looplight_func(16, 8), name=name
+        )
+        self.preferred_fps = 12
+
 class SparkleCP(SparkleEffect):
-    def __init__(self, ctr, cols):
+    def __init__(self, ctr, cols, name="Sparkle"):
         colsrgb = list(map(lambda hsl: hsl_color(*hsl), cols))
         super(SparkleCP, self).__init__(
-            ctr, 3, selected_color_func(colsrgb), pulselight_func(16, 8, 16)
+            ctr, 4, selected_color_func(colsrgb), flashlight_func(16, 16), name=name
+        )
+        self.preferred_fps = 12
+
+class PulsateCP(SparkleEffect):
+    def __init__(self, ctr, cols, name="Pulsate"):
+        colsrgb = list(map(lambda hsl: hsl_color(*hsl), cols))
+        super(PulsateCP, self).__init__(
+            ctr, 3, selected_color_func(colsrgb), pulselight_func(16, 8, 16), name=name
         )
         self.preferred_fps = 12
 
@@ -518,8 +533,8 @@ class Breathbit:
 
 
 class BreathEffect(Effect):
-    def __init__(self, ctr, cols, bend, lspan, cycles, fps=False):
-        super(BreathEffect, self).__init__(ctr)
+    def __init__(self, ctr, cols, bend, lspan, cycles, fps=False, name=""):
+        super(BreathEffect, self).__init__(ctr, name)
         if fps:
             self.preferred_fps = fps
         self.cols = cols
@@ -560,8 +575,8 @@ class BreathEffect(Effect):
 
 
 class BreathCP(BreathEffect):
-    def __init__(self, ctr, cols):
-        super(BreathCP, self).__init__(ctr, cols, 1, 0.75, [12, 30])
+    def __init__(self, ctr, cols, name="Breathe"):
+        super(BreathCP, self).__init__(ctr, cols, 1, 0.75, [12, 30], name=name)
 
 
 """
@@ -575,8 +590,8 @@ effects of AWW leds: Gold, Silver, Bronze, RoseGold
 
 
 class GlitterEffect(Effect):
-    def __init__(self, ctr, freq, cols, icol=(0, 0, 0)):
-        super(GlitterEffect, self).__init__(ctr)
+    def __init__(self, ctr, freq, cols, icol=(0, 0, 0), name=""):
+        super(GlitterEffect, self).__init__(ctr, name)
         self.freq = freq
         self.cols = list(map(lambda hsl: hsl_color(*hsl), cols))
         self.initialcol = hsl_color(*icol)
@@ -592,37 +607,40 @@ class GlitterEffect(Effect):
 
 class Silver(GlitterEffect):
     def __init__(self, ctr):
-        super(Silver, self).__init__(ctr, 10, [(0.0, 1.0, 0.8)], (0.0, 1.0, 0.3))
+        super(Silver, self).__init__(ctr, 10, [(0.0, 1.0, 0.8)], (0.0, 1.0, 0.3), name="Silver")
 
 
 class Gold(GlitterEffect):
     def __init__(self, ctr):
-        super(Gold, self).__init__(ctr, 10, [(0.45, 1.0, 0.5)], (0.45, 1.0, -0.1))
+        super(Gold, self).__init__(ctr, 10, [(0.45, 1.0, 0.5)], (0.45, 1.0, -0.1), name="Gold")
 
 
 class RoseGold(GlitterEffect):
     def __init__(self, ctr):
-        super(RoseGold, self).__init__(ctr, 10, [(0.53, 1.0, 0.6)], (0.53, 1.0, 0.1))
+        super(RoseGold, self).__init__(ctr, 10, [(0.53, 1.0, 0.6)], (0.53, 1.0, 0.1), name="RoseGold")
 
 
 class Bronze(GlitterEffect):
     def __init__(self, ctr):
-        super(Bronze, self).__init__(ctr, 10, [(0.58, 1.0, 0.4)], (0.58, 1.0, -0.4))
+        super(Bronze, self).__init__(ctr, 10, [(0.58, 1.0, 0.4)], (0.58, 1.0, -0.4), name="Bronze")
 
 
 class StainlessSteel(GlitterEffect):
     def __init__(self, ctr):
         super(StainlessSteel, self).__init__(
-            ctr, 10, [(0.0, 0.0, 1.0)], (0.0, 0.0, 0.0)
+            ctr, 10, [(0.0, 0.0, 1.0)], (0.0, 0.0, 0.0), name="StainlessSteel"
         )
 
 
 class GlitterCP(GlitterEffect):
-    def __init__(self, ctr, cols):
+    def __init__(self, ctr, cols, name="Glitter"):
         if len(cols) == 1:
             lcol = (cols[0][0], cols[0][1], min(1.0, cols[0][2] + 0.5))
             cols.append(lcol)
-        super(GlitterCP, self).__init__(ctr, 10, cols[1:], cols[0])
+            n = 10
+        else:
+            n = 4 + 3*len(cols)
+        super(GlitterCP, self).__init__(ctr, n, cols[1:], cols[0], name=name)
 
 
 """
@@ -636,8 +654,8 @@ constant.
 
 
 class RotateEffect(Effect):
-    def __init__(self, ctr, pat, perm, step=1, speed=20):
-        super(RotateEffect, self).__init__(ctr)
+    def __init__(self, ctr, pat, perm, step=1, speed=20, name=""):
+        super(RotateEffect, self).__init__(ctr, name)
         self.origpattern = pat
         self.perm = perm
         self.step = step
@@ -658,7 +676,7 @@ class RotateEffect(Effect):
 
 
 class Spectrum(RotateEffect):
-    def __init__(self, ctr, scattered=False, lightness=0.0, step=1):
+    def __init__(self, ctr, scattered=False, lightness=0.0, step=1, name="Spectrum"):
         numleds = ctr.num_leds
         pat = ctr.make_func_pattern(
             lambda i: hsl_color(i / float(numleds), 1.0, lightness), circular=True
@@ -668,17 +686,17 @@ class Spectrum(RotateEffect):
             random.shuffle(perm)
         else:
             perm = False  # [i if i<numleds/2 else (numleds*3)//2 - 1 - i for i in range(numleds)]
-        super(Spectrum, self).__init__(ctr, pat, perm, step=step)
+        super(Spectrum, self).__init__(ctr, pat, perm, step=step, name=name)
 
 
 class ScatteredSpectrum(Spectrum):
     def __init__(self, ctr):
-        super(ScatteredSpectrum, self).__init__(ctr, True, 0.0)
+        super(ScatteredSpectrum, self).__init__(ctr, True, 0.0, name="ScatteredSpectrum")
 
 
 class RotatingWhites(Spectrum):
     def __init__(self, ctr):
-        super(RotatingWhites, self).__init__(ctr, True, 0.7, 5)
+        super(RotatingWhites, self).__init__(ctr, True, 0.7, step=5, name="RotatingWhites")
 
 
 """
@@ -701,8 +719,8 @@ Has a few different styles:
 
 
 class ColorMeanderEffect(Effect):
-    def __init__(self, ctr, style):
-        super(ColorMeanderEffect, self).__init__(ctr)
+    def __init__(self, ctr, style, name="ColorMeander"):
+        super(ColorMeanderEffect, self).__init__(ctr, name)
         # styles: solid, sequence, scattered, multi, blend, tandem, (whites?)
         self.style = style
         self.pat = None
