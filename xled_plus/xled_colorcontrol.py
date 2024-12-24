@@ -15,72 +15,42 @@ This is the main entrypoint. Run it with from the shell as
 """
 
 from xled_plus.colorcontrol import *
-from xled_plus.samples.sample_setup import *
+from xled_plus.highcontrol import HighControlInterface
+from xled_plus.multicontrol import MultiHighControlInterface
+from xled_plus.discoverall import *
+from xled_plus.ledcolor import *
+from xled_plus.pattern import *
+from xled_plus.effects import *
+from xled_plus.sequence import *
+from xled_plus.shapes import *
 
-def TwinkleFunc(ctr, cols):
-    if cols:
-        colsrgb = list(map(lambda hsl: hsl_color(*hsl), cols))
-        eff = SparkleEffect(ctr, 3, selected_color_func(colsrgb), pulselight_func(16, 8, 16))
-        eff.preferred_fps = 12
-        return eff
-    else:
-        return False
 
-def SparkleFunc(ctr, cols):
-    if cols:
-        colsrgb = list(map(lambda hsl: hsl_color(*hsl), cols))
-        eff = SparkleEffect(ctr, 4, selected_color_func(colsrgb), flashlight_func(16, 16))
-        eff.preferred_fps = 12
-        return eff
-    else:
-        return False
+#   "Effect name": (effect class, min colors, min layout dimensions)
+effect_dict = {
+    "Breathe"  : (BreathCP, 1, 1),
+    "Glow"     : (GlowCP, 2, 1),
+    "Pulsate"  : (PulsateCP, 1, 1),
+    "Sparkle"  : (SparkleCP, 1, 1),
+    "Twinkle"  : (TwinkleCP, 1, 1),
+    "Glitter"  : (GlitterCP, 1, 1),
+    "Sequence" : (TimeSequenceCP, 2, 1),
+    "Waves"    : (HorizontalWavesCP, 2, 1),
+    "Bands"    : (HorizontalBandsCP, 2, 1)
+}
 
-def BreatheFunc(ctr, cols):
-    if cols:
-        return BreathCP(ctr, cols)
-    else:
-        return False
 
-def GlowFunc(ctr, cols):
-    if len(cols) >= 2:
-        return GlowCP(ctr, cols)
-    else:
-        return False
-
-def GlitterFunc(ctr, cols):
-    if cols:
-        return GlitterCP(ctr, cols)
-    else:
-        return False
-
-def SequenceFunc(ctr, cols):
-    if len(cols) >= 2:
-        colsrgb = list(map(lambda hsl: hsl_color(*hsl), cols))
-        eff = GradientSequence(ctr, colsrgb, speed=0.02, folds=0.0, angle=0)
-        return eff
-    else:
-        return False
-
-def BandFunc(ctr, cols):
-    if len(cols) >= 2:
-        colsrgb = list(map(lambda hsl: hsl_color(*hsl), cols))
-        eff = GradientSequence(ctr, colsrgb, speed=0.02, folds=0.25, angle=0)
-        return eff
-    else:
-        return False
+def make_control_list():
+    dic = controldict(discover_all())
+    ctrlst = []
+    for k in dic:
+        if len(dic[k]) > 1:
+            ctrlst.append(MultiHighControlInterface(dic[k]))
+        else:
+            ctrlst.append(HighControlInterface(dic[k][0]))
+    return ctrlst
 
 
 if __name__ == '__main__':
 
-    efflist = [("Breathe", BreatheFunc),
-               ("Glow", GlowFunc),
-               ("Twinkle", TwinkleFunc),
-               ("Sparkle", SparkleFunc),
-               ("Glitter", GlitterFunc),
-               ("Sequence", SequenceFunc),
-               ("Bands", BandFunc)]
-
-    ctr = setup_control()
-
-    cc = ColorControl(ctr, efflist)
+    cc = ColorControl(make_control_list(), effect_dict)
     cc.start_event_loop()
