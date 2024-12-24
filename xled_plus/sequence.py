@@ -25,8 +25,8 @@ import math as m
 
 
 class Sequence(Effect):
-    def __init__(self, ctr, seqfunc, speed, folds, angle=False):
-        super(Sequence, self).__init__(ctr)
+    def __init__(self, ctr, seqfunc, speed, folds, angle=False, name=""):
+        super(Sequence, self).__init__(ctr, name)
         self.seqfunc = seqfunc
         if not ctr.layout_bounds:
             ctr.fetch_layout()
@@ -78,8 +78,8 @@ class Sequence(Effect):
 
 
 class ColorSequence(Sequence):
-    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=False):
-        super(ColorSequence, self).__init__(ctr, self.getcolor, speed, folds, angle)
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=False, name="ColorSequence"):
+        super(ColorSequence, self).__init__(ctr, self.getcolor, speed, folds, angle, name=name)
         if lens is False:
             self.lims = [(i + 1) / len(cols) for i in range(len(cols))]
         else:
@@ -102,8 +102,8 @@ class ColorSequence(Sequence):
 
 
 class GradientSequence(Sequence):
-    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=0):
-        super(GradientSequence, self).__init__(ctr, self.getcolor, speed, folds, angle)
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=0, name="GradientSequence"):
+        super(GradientSequence, self).__init__(ctr, self.getcolor, speed, folds, angle, name=name)
         if lens is False:
             self.lims = [float(i) / len(cols) for i in range(len(cols) + 1)]
         else:
@@ -132,9 +132,38 @@ class GradientSequence(Sequence):
         )
 
 
+class HorizontalBandsCP(ColorSequence):
+    def __init__(self, ctr, cols, name="HorizontalBands"):
+        colsrgb = list(map(lambda hsl: hsl_color(*hsl), cols))
+        folds = 1.4/(len(cols)**0.5)
+        speed = 1.0/(10*len(cols)**0.5)
+        super(HorizontalBandsCP, self).__init__(
+            ctr, colsrgb, speed=speed, folds=folds, angle=0, name=name
+        )
+
+
+class HorizontalWavesCP(GradientSequence):
+    def __init__(self, ctr, cols, name="HorizontalWaves"):
+        colsrgb = list(map(lambda hsl: hsl_color(*hsl), cols))
+        folds = 0.7/(len(cols)**0.5)
+        speed = 1.0/(10*len(cols)**0.5)
+        super(HorizontalWavesCP, self).__init__(
+            ctr, colsrgb, speed=speed, folds=folds, angle=0, name=name
+        )
+
+
+class TimeSequenceCP(GradientSequence):
+    def __init__(self, ctr, cols, name="TimeSequence"):
+        colsrgb = list(map(lambda hsl: hsl_color(*hsl), cols))
+        speed = 1.0/(14*len(cols)**0.5)
+        super(TimeSequenceCP, self).__init__(
+            ctr, colsrgb, speed=speed, folds=0.0, angle=0, name=name
+        )
+
+
 class SpectrumSequence(Sequence):
-    def __init__(self, ctr, lightness=0.0, angle=False):
-        super(SpectrumSequence, self).__init__(ctr, self.getcolor, 0.2, 1.0, angle)
+    def __init__(self, ctr, lightness=0.0, angle=False, name="SpectrumSequence"):
+        super(SpectrumSequence, self).__init__(ctr, self.getcolor, 0.2, 1.0, angle, name=name)
         self.lightness = lightness
 
     def getcolor(self, x):
@@ -171,14 +200,14 @@ class RotatingAngleSequence(Sequence):
 
 
 class RotatingAngleColorSequence(ColorSequence, RotatingAngleSequence):
-    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=False, torque=False):
-        super(RotatingAngleColorSequence, self).__init__(ctr, cols, speed=speed, folds=folds, angle=angle)
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=False, torque=False, name="RotatingAngleColorSequence"):
+        super(RotatingAngleColorSequence, self).__init__(ctr, cols, speed=speed, folds=folds, angle=angle, name=name)
         self.initialize(torque)
 
 
 class RotatingAngleGradientSequence(GradientSequence, RotatingAngleSequence):
-    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=False, torque=False):
-        super(RotatingAngleGradientSequence, self).__init__(ctr, cols, speed=speed, folds=folds, angle=angle)
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=1.0, angle=False, torque=False, name="RotatingAngleGradientSequence"):
+        super(RotatingAngleGradientSequence, self).__init__(ctr, cols, speed=speed, folds=folds, angle=angle, name=name)
         self.initialize(torque)
 
 
@@ -207,20 +236,20 @@ class VaryingAngleSequence(Sequence):
 
 
 class VaryingAngleColorSequence(ColorSequence, VaryingAngleSequence):
-    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=3.0):
-        super(VaryingAngleColorSequence, self).__init__(ctr, cols, speed, folds)
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=3.0, name="VaryingAngleColorSequence"):
+        super(VaryingAngleColorSequence, self).__init__(ctr, cols, speed, folds, name=name)
         self.initialize(folds)
 
 
 class VaryingAngleGradientSequence(GradientSequence, VaryingAngleSequence):
-    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=3.0):
-        super(VaryingAngleGradientSequence, self).__init__(ctr, cols, speed, folds)
+    def __init__(self, ctr, cols, lens=False, speed=1.0, folds=3.0, name="VaryingAngleGradientSequence"):
+        super(VaryingAngleGradientSequence, self).__init__(ctr, cols, speed, folds, name=name)
         self.initialize(folds)
 
 
 class MeanderingSequence(VaryingAngleSequence):
-    def __init__(self, ctr, fixangle=False):
-        super(MeanderingSequence, self).__init__(ctr, self.getcolor, 0.0, 1.0, fixangle)
+    def __init__(self, ctr, fixangle=False, name="MeanderingSequence"):
+        super(MeanderingSequence, self).__init__(ctr, self.getcolor, 0.0, 1.0, fixangle, name=name)
         self.fixangle = fixangle
         self.initialize(1.0)
         self.cm = ColorMeander("sphere")
@@ -250,8 +279,8 @@ class MeanderingSequence(VaryingAngleSequence):
 
 
 class MeanderingTandemSequence(VaryingAngleSequence):
-    def __init__(self, ctr, gap=False, fixangle=False):
-        super(MeanderingTandemSequence, self).__init__(ctr, self.getcolor, 0.0, 1.0, fixangle)
+    def __init__(self, ctr, gap=False, fixangle=False, name="MeanderingTandemSequence"):
+        super(MeanderingTandemSequence, self).__init__(ctr, self.getcolor, 0.0, 1.0, fixangle, name=name)
         self.initialize(1.0)
         self.gap = gap
         self.fixangle = fixangle
